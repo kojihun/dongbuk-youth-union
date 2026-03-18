@@ -5,10 +5,11 @@ import { getBrandImages } from "../app/components/brandStore";
 import { getEvents, type EventItem } from "../app/components/eventStore";
 import { getVerse } from "../app/components/verseStore";
 import { verifyPassword } from "../app/components/passwordStore";
+import { getPopups, type PopupItem } from "../app/components/popupStore";
 import { motion, AnimatePresence } from "motion/react";
 import { Link, useNavigate } from "react-router";
 import { useState } from "react";
-import { Settings } from "lucide-react";
+import { Settings, X } from "lucide-react";
 import svgPaths from "./svg-m4b78paeab";
 
 /** 프로젝트 스토어에서 최신순 이미지를 가져오는 헬퍼 */
@@ -893,6 +894,43 @@ function NavSection1() {
 }
 
 export default function Desktop() {
+  /* 하루동안 열지 않기 — localStorage에서 만료 시간 확인 */
+  const getHiddenUntil = (): Record<string, number> => {
+    try {
+      return JSON.parse(localStorage.getItem("popup_hidden_until") || "{}");
+    } catch { return {}; }
+  };
+
+  const now = Date.now();
+  const hiddenUntil = getHiddenUntil();
+
+  const visiblePopups = getPopups().filter(
+    (p) => p.visible && (p.image || p.title) && !(hiddenUntil[p.id] && hiddenUntil[p.id] > now)
+  );
+  const [dismissedPopups, setDismissedPopups] = useState<Set<string>>(new Set());
+  const [hideForDay, setHideForDay] = useState(false);
+
+  const activePopups = visiblePopups.filter((p) => !dismissedPopups.has(p.id));
+
+  const dismissPopup = (id: string) => {
+    if (hideForDay) {
+      const stored = getHiddenUntil();
+      stored[id] = Date.now() + 24 * 60 * 60 * 1000;
+      localStorage.setItem("popup_hidden_until", JSON.stringify(stored));
+    }
+    setDismissedPopups((prev) => new Set(prev).add(id));
+  };
+
+  const dismissAll = () => {
+    if (hideForDay) {
+      const stored = getHiddenUntil();
+      const expires = Date.now() + 24 * 60 * 60 * 1000;
+      activePopups.forEach((p) => { stored[p.id] = expires; });
+      localStorage.setItem("popup_hidden_until", JSON.stringify(stored));
+    }
+    activePopups.forEach((p) => setDismissedPopups((prev) => new Set(prev).add(p.id)));
+  };
+
   return (
     <div
       className="bg-white flex flex-col items-center relative w-full min-h-screen"
@@ -902,6 +940,122 @@ export default function Desktop() {
       <Main />
       <FooterSection />
       <NavSection1 />
+
+      {/* 홍보창 팝업 오버레이 */}
+      <AnimatePresence>
+        {activePopups.length > 0 && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            onClick={() => activePopups.forEach((p) => dismissPopup(p.id))}
+          >
+            <motion.div
+              className="bg-white w-full sm:w-auto sm:max-w-[480px] sm:rounded-[16px] rounded-t-[16px] shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
+              initial={{ opacity: 0, y: 80 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 80 }}
+              transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* 모바일 핸들 */}
+              <div className="w-[36px] h-[4px] bg-[#ddd] rounded-full mx-auto mt-[10px] sm:hidden" />
+
+              {activePopups.map((popup, idx) => (
+                <div
+                  key={popup.id}
+                  className={`relative ${idx > 0 ? "border-t border-[#eee]" : ""}`}
+                >
+                  {/* 닫기 버튼 (첫 번째 팝업에만) */}
+                  {idx === 0 && (
+                    <button
+                      onClick={dismissAll}
+                      className="absolute top-[12px] right-[12px] z-10 w-[28px] h-[28px] flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors cursor-pointer border-none"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+
+                  {/* 이미지 */}
+                  {popup.image && (
+                    <div className="w-full">
+                      <img
+                        src={popup.image}
+                        alt={popup.title || "홍보"}
+                        className="w-full h-auto max-h-[360px] object-cover"
+                      />
+                    </div>
+                  )}
+
+                  {/* 텍스트 콘텐츠 */}
+                  {(popup.title || popup.description) && (
+                    <div className="px-[24px] py-[20px]">
+                      {popup.title && (
+                        <p
+                          className="font-['Noto_Sans_KR:Medium',sans-serif] font-medium text-[16px] md:text-[18px] text-black tracking-[-0.4px] leading-[1.4]"
+                          style={{ fontVariationSettings: "'wdth' 100" }}
+                        >
+                          {popup.title}
+                        </p>
+                      )}
+                      {popup.description && (
+                        <p
+                          className="font-['Noto_Sans_KR:Regular',sans-serif] font-normal text-[13px] md:text-[14px] text-[#767676] tracking-[-0.3px] leading-[1.7] mt-[8px]"
+                          style={{ fontVariationSettings: "'wdth' 100" }}
+                        >
+                          {popup.description.split("\n").map((line, li) => (
+                            <span key={li}>
+                              {li > 0 && <br />}
+                              {line}
+                            </span>
+                          ))}
+                        </p>
+                      )}
+                      {popup.linkUrl && (
+                        <a
+                          href={popup.linkUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block mt-[14px] font-['Instrument_Sans:Medium',sans-serif] font-medium text-[13px] text-[#4a6741] tracking-[-0.3px] border border-[#4a6741]/30 rounded-full px-[18px] py-[8px] hover:bg-[#f0f5ef] transition-colors no-underline"
+                          style={{ fontVariationSettings: "'wdth' 100" }}
+                        >
+                          {popup.linkLabel || "자세히 보기"} →
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* 하단: 하루동안 열지 않기 + 닫기 */}
+              <div className="px-[24px] pb-[20px] pt-[4px] flex flex-col gap-[10px]">
+                <label className="flex items-center gap-[8px] cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={hideForDay}
+                    onChange={(e) => setHideForDay(e.target.checked)}
+                    className="w-[16px] h-[16px] accent-[#4a6741] cursor-pointer"
+                  />
+                  <span
+                    className="font-['Noto_Sans_KR:Regular',sans-serif] font-normal text-[12px] text-[#999] tracking-[-0.3px]"
+                    style={{ fontVariationSettings: "'wdth' 100" }}
+                  >
+                    하루동안 열지 않기
+                  </span>
+                </label>
+                <button
+                  onClick={dismissAll}
+                  className="w-full font-['Noto_Sans_KR:Regular',sans-serif] font-normal text-[13px] text-[#999] tracking-[-0.3px] py-[10px] rounded-[8px] border border-[#eee] hover:border-[#ccc] transition-colors cursor-pointer bg-white"
+                >
+                  닫기
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

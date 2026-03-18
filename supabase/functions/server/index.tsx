@@ -4,6 +4,16 @@ import { logger } from "npm:hono/logger";
 import * as kv from "./kv_store.tsx";
 const app = new Hono();
 
+// Global error handler to catch broken pipe and other errors
+app.onError((err, c) => {
+  console.log("Server error:", err.message);
+  try {
+    return c.json({ ok: false, error: err.message }, 500);
+  } catch {
+    return new Response("Internal Server Error", { status: 500 });
+  }
+});
+
 // Enable logger
 app.use('*', logger(console.log));
 
@@ -55,12 +65,19 @@ app.put("/make-server-c8f2251b/store/:key", async (c) => {
 app.post("/make-server-c8f2251b/store/batch-get", async (c) => {
   try {
     const { keys } = await c.req.json();
-    const values = await kv.mget(keys);
-    // mget returns values in order, but we need key-value pairs
-    // Re-fetch individually to ensure correct mapping
+    const results = await Promise.all(
+      keys.map(async (key: string) => {
+        try {
+          const value = await kv.get(key);
+          return [key, value ?? null] as const;
+        } catch {
+          return [key, null] as const;
+        }
+      })
+    );
     const result: Record<string, any> = {};
-    for (const key of keys) {
-      result[key] = await kv.get(key);
+    for (const [key, value] of results) {
+      result[key] = value;
     }
     return c.json({ ok: true, data: result });
   } catch (e: any) {
@@ -69,4 +86,9 @@ app.post("/make-server-c8f2251b/store/batch-get", async (c) => {
   }
 });
 
-Deno.serve(app.fetch);
+Deno.serve({
+  onError(err) {
+    console.log("Deno.serve connection error (safe to ignore):", (err as Error).message);
+    return new Response("Internal Server Error", { status: 500 });
+  },
+}, app.fetch);

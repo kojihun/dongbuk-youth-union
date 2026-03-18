@@ -46,6 +46,13 @@ import {
   saveBrandImages,
   type BrandImages,
 } from "./brandStore";
+import {
+  getPopups,
+  savePopups,
+  generatePopupId,
+  MAX_POPUPS,
+  type PopupItem,
+} from "./popupStore";
 
 /* ─── 공유 스타일 ─── */
 const inputCls =
@@ -157,6 +164,9 @@ export default function HomeAdminPage() {
   const [brandError, setBrandError] = useState("");
   const [brandSuccess, setBrandSuccess] = useState("");
 
+  /* 홍보창 상태 */
+  const [popups, setPopups] = useState<PopupItem[]>(() => getPopups());
+
   const toast = (msg: string) => {
     setSaveMessage(msg);
     setTimeout(() => setSaveMessage(""), 2000);
@@ -169,6 +179,7 @@ export default function HomeAdminPage() {
     saveEvents(events);
     saveDonationAccount(donationAccount);
     saveBrandImages(brandImages);
+    savePopups(popups);
     toast("모든 변경사항이 저장되었습니다");
   };
 
@@ -380,6 +391,63 @@ export default function HomeAdminPage() {
     setBrandImages(updated);
     saveBrandImages(updated);
     toast("이미지가 삭제되었습니다");
+  };
+
+  /* ─── 홍보창 핸들러 ─── */
+  const handlePopupImageUpload = (id: string, file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX_W = 1200;
+        const MAX_H = 800;
+        let w = img.width;
+        let h = img.height;
+        if (w > MAX_W) { h = (h * MAX_W) / w; w = MAX_W; }
+        if (h > MAX_H) { w = (w * MAX_H) / h; h = MAX_H; }
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0, w, h);
+        const base64 = canvas.toDataURL("image/jpeg", 0.8);
+        const updated = popups.map((p) => (p.id === id ? { ...p, image: base64 } : p));
+        setPopups(updated);
+        savePopups(updated);
+        toast("홍보 이미지가 등록되었습니다");
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const addPopup = () => {
+    if (popups.length >= MAX_POPUPS) return;
+    const newPopup: PopupItem = {
+      id: generatePopupId(),
+      title: "",
+      description: "",
+      image: "",
+      visible: true,
+      linkUrl: "",
+      linkLabel: "자세히 보기",
+    };
+    const updated = [...popups, newPopup];
+    setPopups(updated);
+    savePopups(updated);
+  };
+
+  const updatePopup = (id: string, patch: Partial<PopupItem>) => {
+    const updated = popups.map((p) => (p.id === id ? { ...p, ...patch } : p));
+    setPopups(updated);
+    savePopups(updated);
+  };
+
+  const removePopup = (id: string) => {
+    const updated = popups.filter((p) => p.id !== id);
+    setPopups(updated);
+    savePopups(updated);
+    toast("홍보창이 삭제되었습니다");
   };
 
   /* ─── 비밀번호 변경 핸들러 ─── */
@@ -1061,7 +1129,107 @@ export default function HomeAdminPage() {
           </div>
         </Section>
 
-        {/* ═══ 7. 비밀번호 변경 ═══ */}
+        {/* ═══ 7. 홍보창 관리 ═══ */}
+        <Section title="홍보창 관리">
+          <div className="flex flex-col gap-[16px]">
+            <p
+              className="font-['Noto_Sans_KR:Regular',sans-serif] font-normal text-[12px] text-[#999] tracking-[-0.3px] leading-[1.6]"
+              style={fv}
+            >
+              메인 페이지에 표시될 홍보창을 관리합니다. 이미지를 업로드하면 즉시 반영됩니다.
+            </p>
+
+            {/* 홍보창 목록 */}
+            {popups.map((popup) => (
+              <div key={popup.id} className="p-[12px] bg-[#fafaf8] rounded-[8px] border border-[#f0f0f0]">
+                <div className="flex items-center gap-[12px]">
+                  <div className="w-[80px] h-[80px] rounded-[8px] border border-[#eee] overflow-hidden bg-[#fafaf8] shrink-0 flex items-center justify-center">
+                    {popup.image ? (
+                      <img src={popup.image} alt="홍보 이미지" className="w-full h-full object-contain" />
+                    ) : (
+                      <p className="font-['Noto_Sans_KR:Regular',sans-serif] text-[10px] text-[#ccc] tracking-[-0.3px]" style={fv}>없음</p>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-[6px]">
+                    <label className="flex items-center gap-[6px] font-['Noto_Sans_KR:Regular',sans-serif] font-normal text-[13px] text-[#4a6741] tracking-[-0.3px] px-[14px] py-[9px] rounded-[8px] border border-dashed border-[#4a6741]/30 hover:border-[#4a6741] transition-colors cursor-pointer bg-transparent">
+                      <Plus size={14} />
+                      이미지 선택
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) handlePopupImageUpload(popup.id, f);
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                    {popup.image && (
+                      <button
+                        onClick={() => removePopup(popup.id)}
+                        className="flex items-center gap-[6px] font-['Noto_Sans_KR:Regular',sans-serif] font-normal text-[13px] text-[#ccc] hover:text-red-400 tracking-[-0.3px] px-[14px] py-[9px] rounded-[8px] border border-[#eee] hover:border-red-300 transition-colors cursor-pointer bg-white"
+                      >
+                        <Trash2 size={13} />
+                        삭제
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-[8px] mt-[12px]">
+                  <input
+                    value={popup.title}
+                    onChange={(e) => updatePopup(popup.id, { title: e.target.value })}
+                    placeholder="제목"
+                    className={inputCls}
+                  />
+                  <textarea
+                    value={popup.description}
+                    onChange={(e) => updatePopup(popup.id, { description: e.target.value })}
+                    rows={2}
+                    className={textareaCls}
+                    placeholder="설명"
+                  />
+                  <input
+                    value={popup.linkUrl}
+                    onChange={(e) => updatePopup(popup.id, { linkUrl: e.target.value })}
+                    placeholder="링크 URL"
+                    className={inputCls}
+                  />
+                  <input
+                    value={popup.linkLabel}
+                    onChange={(e) => updatePopup(popup.id, { linkLabel: e.target.value })}
+                    placeholder="링크 라벨"
+                    className={inputCls}
+                  />
+                  <div className="flex items-center gap-[6px]">
+                    <button
+                      onClick={() => updatePopup(popup.id, { visible: !popup.visible })}
+                      className={`p-[7px] rounded-[6px] border cursor-pointer transition-all duration-200 ${
+                        popup.visible ? "border-[#4a6741] text-[#4a6741] bg-[#f0f5ef]" : "border-[#ddd] text-[#ccc] bg-white"
+                      }`}
+                    >
+                      {popup.visible ? <Eye size={14} /> : <EyeOff size={14} />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {/* 추가 버튼 */}
+            <div className="flex gap-[8px] mt-[4px]">
+              <button
+                onClick={addPopup}
+                className="flex items-center gap-[6px] font-['Noto_Sans_KR:Regular',sans-serif] font-normal text-[13px] text-[#4a6741] tracking-[-0.3px] px-[14px] py-[9px] rounded-[8px] border border-dashed border-[#4a6741]/30 hover:border-[#4a6741] transition-colors cursor-pointer bg-transparent"
+              >
+                <Plus size={14} />
+                홍보창 추가
+              </button>
+            </div>
+          </div>
+        </Section>
+
+        {/* ═══ 8. 비밀번호 변경 ═══ */}
         <Section title="비밀번호 변경">
           <div className="flex flex-col gap-[14px]">
             <div>

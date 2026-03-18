@@ -15,13 +15,27 @@ const headers = () => ({
 /** 서버에서 단일 키 읽기 */
 export async function serverGet(key: string): Promise<any | null> {
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
     const res = await fetch(`${BASE_URL}/store/${encodeURIComponent(key)}`, {
       headers: headers(),
+      signal: controller.signal,
     });
-    const json = await res.json();
-    if (json.ok) return json.value;
-    console.log(`[dataSync] serverGet error for key "${key}":`, json.error);
-    return null;
+    clearTimeout(timeout);
+    if (!res.ok) {
+      console.log(`[dataSync] serverGet HTTP ${res.status} for key "${key}"`);
+      return null;
+    }
+    const text = await res.text();
+    try {
+      const json = JSON.parse(text);
+      if (json.ok) return json.value;
+      console.log(`[dataSync] serverGet error for key "${key}":`, json.error);
+      return null;
+    } catch {
+      console.log(`[dataSync] serverGet parse error for key "${key}"`);
+      return null;
+    }
   } catch (e) {
     console.log(`[dataSync] serverGet network error for key "${key}":`, e);
     return null;
@@ -30,11 +44,15 @@ export async function serverGet(key: string): Promise<any | null> {
 
 /** 서버에 단일 키 저장 (fire-and-forget) */
 export function serverSet(key: string, value: any): void {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
   fetch(`${BASE_URL}/store/${encodeURIComponent(key)}`, {
     method: "PUT",
     headers: headers(),
     body: JSON.stringify({ value }),
-  }).catch((e) => {
+    signal: controller.signal,
+  }).then(() => clearTimeout(timeout)).catch((e) => {
+    clearTimeout(timeout);
     console.log(`[dataSync] serverSet error for key "${key}":`, e);
   });
 }
@@ -42,11 +60,15 @@ export function serverSet(key: string, value: any): void {
 /** 서버에서 여러 키를 한번에 읽기 */
 export async function serverBatchGet(keys: string[]): Promise<Record<string, any>> {
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
     const res = await fetch(`${BASE_URL}/store/batch-get`, {
       method: "POST",
       headers: headers(),
       body: JSON.stringify({ keys }),
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
     const json = await res.json();
     if (json.ok) return json.data;
     console.log("[dataSync] serverBatchGet error:", json.error);
@@ -68,6 +90,7 @@ const ALL_KEYS = [
   "admin_password",
   "donation_account",
   "admin_brand_images",
+  "admin_popups",
 ];
 
 let _initPromise: Promise<void> | null = null;
@@ -78,16 +101,19 @@ export function initDataFromServer(): Promise<void> {
 
   _initPromise = (async () => {
     try {
-      const data = await serverBatchGet(ALL_KEYS);
+      // 순차적으로 가져옴 (병렬 요청이 서버 연결을 압도하여 끊김 발생 방지)
       for (const key of ALL_KEYS) {
-        if (data[key] !== undefined && data[key] !== null) {
-          // 서버에 데이터가 있으면 localStorage에 저장
-          if (key === "admin_password") {
-            // 비밀번호는 문자열 그대로 저장
-            localStorage.setItem(key, typeof data[key] === "string" ? data[key] : JSON.stringify(data[key]));
-          } else {
-            localStorage.setItem(key, JSON.stringify(data[key]));
+        try {
+          const value = await serverGet(key);
+          if (value !== undefined && value !== null) {
+            if (key === "admin_password") {
+              localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
+            } else {
+              localStorage.setItem(key, JSON.stringify(value));
+            }
           }
+        } catch (e) {
+          console.log(`[dataSync] Failed to load key "${key}":`, e);
         }
       }
       console.log("[dataSync] Server data loaded into localStorage");
