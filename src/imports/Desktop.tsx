@@ -894,7 +894,7 @@ function NavSection1() {
 }
 
 export default function Desktop() {
-  /* 하루동안 열지 않기 — localStorage에서 만료 시간 확인 */
+  /* 24시간 동안 열지 않기 — localStorage에서 만료 시간 확인 */
   const getHiddenUntil = (): Record<string, number> => {
     try {
       return JSON.parse(localStorage.getItem("popup_hidden_until") || "{}");
@@ -907,24 +907,27 @@ export default function Desktop() {
   const visiblePopups = getPopups().filter(
     (p) => p.visible && (p.image || p.title) && !(hiddenUntil[p.id] && hiddenUntil[p.id] > now)
   );
+
   const [dismissedPopups, setDismissedPopups] = useState<Set<string>>(new Set());
-  const [hideForDay, setHideForDay] = useState(false);
+  const [hideDuration, setHideDuration] = useState<'none' | '12h' | '24h'>('none');
 
   const activePopups = visiblePopups.filter((p) => !dismissedPopups.has(p.id));
 
+  const durationMs = hideDuration === '24h' ? 24 * 60 * 60 * 1000 : hideDuration === '12h' ? 12 * 60 * 60 * 1000 : 0;
+
   const dismissPopup = (id: string) => {
-    if (hideForDay) {
+    if (durationMs > 0) {
       const stored = getHiddenUntil();
-      stored[id] = Date.now() + 24 * 60 * 60 * 1000;
+      stored[id] = Date.now() + durationMs;
       localStorage.setItem("popup_hidden_until", JSON.stringify(stored));
     }
     setDismissedPopups((prev) => new Set(prev).add(id));
   };
 
   const dismissAll = () => {
-    if (hideForDay) {
+    if (durationMs > 0) {
       const stored = getHiddenUntil();
-      const expires = Date.now() + 24 * 60 * 60 * 1000;
+      const expires = Date.now() + durationMs;
       activePopups.forEach((p) => { stored[p.id] = expires; });
       localStorage.setItem("popup_hidden_until", JSON.stringify(stored));
     }
@@ -1029,22 +1032,38 @@ export default function Desktop() {
                 </div>
               ))}
 
-              {/* 하단: 하루동안 열지 않기 + 닫기 */}
+              {/* 하단: 12시간 / 24시간 동안 열지 않기 + 닫기 */}
               <div className="px-[24px] pb-[20px] pt-[4px] flex flex-col gap-[10px]">
-                <label className="flex items-center gap-[8px] cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={hideForDay}
-                    onChange={(e) => setHideForDay(e.target.checked)}
-                    className="w-[16px] h-[16px] accent-[#4a6741] cursor-pointer"
-                  />
-                  <span
-                    className="font-['Noto_Sans_KR:Regular',sans-serif] font-normal text-[12px] text-[#999] tracking-[-0.3px]"
-                    style={{ fontVariationSettings: "'wdth' 100" }}
-                  >
-                    하루동안 열지 않기
-                  </span>
-                </label>
+                <div className="flex items-center gap-[16px]">
+                  <label className="flex items-center gap-[6px] cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={hideDuration === '12h'}
+                      onChange={(e) => setHideDuration(e.target.checked ? '12h' : 'none')}
+                      className="w-[16px] h-[16px] accent-[#4a6741] cursor-pointer"
+                    />
+                    <span
+                      className="font-['Noto_Sans_KR:Regular',sans-serif] font-normal text-[12px] text-[#999] tracking-[-0.3px]"
+                      style={{ fontVariationSettings: "'wdth' 100" }}
+                    >
+                      12시간 동안 열지 않기
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-[6px] cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={hideDuration === '24h'}
+                      onChange={(e) => setHideDuration(e.target.checked ? '24h' : 'none')}
+                      className="w-[16px] h-[16px] accent-[#4a6741] cursor-pointer"
+                    />
+                    <span
+                      className="font-['Noto_Sans_KR:Regular',sans-serif] font-normal text-[12px] text-[#999] tracking-[-0.3px]"
+                      style={{ fontVariationSettings: "'wdth' 100" }}
+                    >
+                      24시간 동안 열지 않기
+                    </span>
+                  </label>
+                </div>
                 <button
                   onClick={dismissAll}
                   className="w-full font-['Noto_Sans_KR:Regular',sans-serif] font-normal text-[13px] text-[#999] tracking-[-0.3px] py-[10px] rounded-[8px] border border-[#eee] hover:border-[#ccc] transition-colors cursor-pointer bg-white"
