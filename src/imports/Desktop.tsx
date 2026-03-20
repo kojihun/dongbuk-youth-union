@@ -145,16 +145,63 @@ function NavSection() {
   );
 }
 
+/* ─── 반응형 타이포그래피 유틸리티 ─── */
+/**
+ * 관리자 입력값(기준값)을 clamp() 기반 반응형 CSS 값으로 변환합니다.
+ * - base: 관리자 입력 문자열 (예: "44px", "44", "-2.2px")
+ * - opts.min / opts.max: 최소/최대 px 제한
+ * - opts.mobileRatio: 모바일에서의 축소비 (0~1)
+ * - opts.isSpacing: true이면 letter-spacing 용 (음수값 허용, 모바일서 절반 보정)
+ */
+function responsiveVal(
+  base: string | undefined,
+  opts: { min: number; max: number; mobileRatio: number; isSpacing?: boolean }
+): string | undefined {
+  if (!base) return undefined;
+  const num = parseFloat(base);
+  if (isNaN(num)) return base; // clamp 불가 → 그대로
+
+  if (opts.isSpacing) {
+    // letter-spacing: 음수도 허용, 모바일에서 절반 보정
+    const clamped = Math.max(opts.min, Math.min(opts.max, num));
+    const mob = clamped * opts.mobileRatio;
+    // 320px → mob, 1024px → clamped (fluid)
+    const slope = (clamped - mob) / (1024 - 320);
+    const intercept = mob - slope * 320;
+    return `clamp(${mob.toFixed(2)}px, ${intercept.toFixed(2)}px + ${(slope * 100).toFixed(3)}vw, ${clamped.toFixed(2)}px)`;
+  }
+
+  // font-size: 양수만 허용
+  const clamped = Math.max(opts.min, Math.min(opts.max, num));
+  const mob = Math.max(opts.min, Math.round(clamped * opts.mobileRatio));
+  // 320px → mob, 1024px → clamped (fluid)
+  const slope = (clamped - mob) / (1024 - 320);
+  const intercept = mob - slope * 320;
+  return `clamp(${mob}px, ${intercept.toFixed(2)}px + ${(slope * 100).toFixed(3)}vw, ${clamped}px)`;
+}
+
+/* ─── 텍스트 넘침 방지 공용 스타일 ─── */
+const safeTextStyle: React.CSSProperties = {
+  overflowWrap: "break-word",
+  wordBreak: "keep-all",
+  maxWidth: "100%",
+};
+
 function Frame() {
   const verse = getVerse();
   const enLines = verse.verseEn.split("\n");
   const alignClass = verse.align === "center" ? "text-center" : verse.align === "left" ? "text-left" : "text-right";
 
+  const enFS = responsiveVal(verse.enFontSize, { min: 18, max: 72, mobileRatio: 0.55 });
+  const enLS = responsiveVal(verse.enLetterSpacing, { min: -6, max: 4, mobileRatio: 0.55, isSpacing: true });
+  const koFS = responsiveVal(verse.koFontSize, { min: 10, max: 28, mobileRatio: 0.73 });
+  const koLS = responsiveVal(verse.koLetterSpacing, { min: -3, max: 2, mobileRatio: 0.6, isSpacing: true });
+
   return (
     <div className={`relative ${alignClass} w-full py-[30px] md:py-[40px] lg:py-[50px]`}>
       <motion.div
         className="flex flex-col font-['Instrument_Sans:Regular',sans-serif] font-normal justify-center leading-[1.15] text-[24px] md:text-[32px] lg:text-[44px] text-black tracking-[-1.2px] md:tracking-[-1.6px] lg:tracking-[-2.2px]"
-        style={{ fontVariationSettings: "'wdth' 100" }}
+        style={{ fontVariationSettings: "'wdth' 100", fontSize: enFS, letterSpacing: enLS, ...safeTextStyle }}
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: false, amount: 0.3 }}
@@ -168,15 +215,15 @@ function Frame() {
         </p>
       </motion.div>
       <motion.div
-        className={`mt-[24px] md:mt-[30px] lg:mt-[40px] ${alignClass}`}
+        className="mt-[20px] md:mt-[30px] lg:mt-[40px] pt-[12px] md:pt-[16px] lg:pt-[24px]"
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: false, amount: 0.3 }}
         transition={{ duration: 0.8, delay: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
       >
         <p
-          className="font-['Noto_Sans_KR:Medium',sans-serif] font-medium text-[13px] md:text-[14px] lg:text-[16px] text-[#767676] tracking-[-0.4px] leading-[1.6]"
-          style={{ fontVariationSettings: "'wdth' 100" }}
+          className="font-['Noto_Sans_KR:Medium',sans-serif] font-medium text-[11px] md:text-[13px] lg:text-[15px] text-[#767676] tracking-[-0.3px] md:tracking-[-0.4px] leading-[1.6]"
+          style={{ fontVariationSettings: "'wdth' 100", fontSize: koFS, letterSpacing: koLS, ...safeTextStyle }}
         >
           {verse.verseKo}
           <br className="md:hidden" />
@@ -211,6 +258,12 @@ function IntroSection() {
 function OurWorkContent() {
   const { intro } = getHomeData();
   const introAlign = intro.align || "left";
+
+  const titleFS = responsiveVal(intro.titleFontSize, { min: 16, max: 48, mobileRatio: 0.6 });
+  const titleLS = responsiveVal(intro.titleLetterSpacing, { min: -3, max: 2, mobileRatio: 0.5, isSpacing: true });
+  const paraFS = responsiveVal(intro.fontSize, { min: 12, max: 26, mobileRatio: 0.75 });
+  const paraLS = responsiveVal(intro.letterSpacing, { min: -2, max: 2, mobileRatio: 0.6, isSpacing: true });
+
   return (
     <div
       className="flex items-center relative w-full py-[40px] md:py-[56px] lg:py-[72px]"
@@ -220,10 +273,10 @@ function OurWorkContent() {
         aria-hidden="true"
         className="absolute border-b border-black border-solid border-t inset-0 pointer-events-none"
       />
-      <div className={`flex flex-col ${introAlign === "center" ? "items-center" : introAlign === "right" ? "items-end" : "items-start"} justify-center relative w-full px-[20px] md:px-[40px] lg:px-[60px]`}>
+      <div className={`flex flex-col ${introAlign === "center" ? "items-center" : introAlign === "right" ? "items-end" : "items-start"} justify-center relative w-full px-[20px] md:px-[40px] lg:px-[60px] max-w-[1100px] mx-auto`}>
         <motion.p
           className={`font-['Noto_Sans_KR:Medium',sans-serif] font-medium text-[20px] md:text-[23px] lg:text-[28px] text-black tracking-[-0.6px] leading-[1.4] mb-[36px] md:mb-[46px] lg:mb-[56px] w-full ${introAlign === "center" ? "text-center" : introAlign === "right" ? "text-right" : "text-left"}`}
-          style={{ fontVariationSettings: "'wdth' 100" }}
+          style={{ fontVariationSettings: "'wdth' 100", fontSize: titleFS, letterSpacing: titleLS, ...safeTextStyle }}
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false, amount: 0.3 }}
@@ -236,7 +289,7 @@ function OurWorkContent() {
             <motion.p
               key={i}
               className="font-['Noto_Sans_KR:Regular',sans-serif] font-normal text-[13px] md:text-[14px] lg:text-[17px] text-[#767676] tracking-[-0.3px] leading-[2] md:leading-[2.2]"
-              style={{ fontVariationSettings: "'wdth' 100" }}
+              style={{ fontVariationSettings: "'wdth' 100", fontSize: paraFS, letterSpacing: paraLS, ...safeTextStyle }}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: false, amount: 0.3 }}

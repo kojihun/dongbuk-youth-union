@@ -638,6 +638,35 @@ export default function HomeAdminPage() {
               />
             </div>
 
+            <div className="flex flex-col sm:flex-row gap-[16px]">
+              <div className="flex-1">
+                <Label>제목 글자 크기 (기본: 28px)</Label>
+                <input
+                  value={home.intro.titleFontSize || ""}
+                  onChange={(e) => {
+                    const updated = { ...home, intro: { ...home.intro, titleFontSize: e.target.value } };
+                    setHome(updated);
+                    saveHomeData(updated);
+                  }}
+                  placeholder="예: 28px, 2rem 등"
+                  className={inputCls}
+                />
+              </div>
+              <div className="flex-1">
+                <Label>제목 자간 (기본: -0.6px)</Label>
+                <input
+                  value={home.intro.titleLetterSpacing || ""}
+                  onChange={(e) => {
+                    const updated = { ...home, intro: { ...home.intro, titleLetterSpacing: e.target.value } };
+                    setHome(updated);
+                    saveHomeData(updated);
+                  }}
+                  placeholder="예: -0.6px"
+                  className={inputCls}
+                />
+              </div>
+            </div>
+
             {/* 텍스트 정렬 */}
             <div>
               <Label>텍스트 정렬</Label>
@@ -660,6 +689,35 @@ export default function HomeAdminPage() {
                     <span className="hidden sm:inline">{opt.label}</span>
                   </button>
                 ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-[16px]">
+              <div className="flex-1">
+                <Label>글자 크기 (기본: 15px)</Label>
+                <input
+                  value={home.intro.fontSize || ""}
+                  onChange={(e) => {
+                    const updated = { ...home, intro: { ...home.intro, fontSize: e.target.value } };
+                    setHome(updated);
+                    saveHomeData(updated);
+                  }}
+                  placeholder="예: 15px, 1rem 등"
+                  className={inputCls}
+                />
+              </div>
+              <div className="flex-1">
+                <Label>자간 (기본: -0.4px)</Label>
+                <input
+                  value={home.intro.letterSpacing || ""}
+                  onChange={(e) => {
+                    const updated = { ...home, intro: { ...home.intro, letterSpacing: e.target.value } };
+                    setHome(updated);
+                    saveHomeData(updated);
+                  }}
+                  placeholder="예: -0.4px, 0px 등"
+                  className={inputCls}
+                />
               </div>
             </div>
 
@@ -755,6 +813,34 @@ export default function HomeAdminPage() {
               </div>
             </div>
 
+            <div className="flex flex-col sm:flex-row gap-[16px]">
+              <div className="flex-1">
+                <Label>영문 글자 크기 (기본: 44px)</Label>
+                <input
+                  value={verse.enFontSize || ""}
+                  onChange={(e) => {
+                    const updated = { ...verse, enFontSize: e.target.value };
+                    setVerse(updated);
+                    saveVerse(updated);
+                  }}
+                  placeholder="예: 44px"
+                  className={inputCls}
+                />
+              </div>
+              <div className="flex-1">
+                <Label>영문 자간 (기본: -2.2px)</Label>
+                <input
+                  value={verse.enLetterSpacing || ""}
+                  onChange={(e) => {
+                    const updated = { ...verse, enLetterSpacing: e.target.value };
+                    setVerse(updated);
+                    saveVerse(updated);
+                  }}
+                  placeholder="예: -2.2px"
+                  className={inputCls}
+                />
+              </div>
+            </div>
             <div>
               <Label>영문 구절 (줄바꿈으로 행 구분)</Label>
               <textarea
@@ -779,6 +865,34 @@ export default function HomeAdminPage() {
                 }}
                 className={inputCls}
               />
+            </div>
+            <div className="flex flex-col sm:flex-row gap-[16px]">
+              <div className="flex-1">
+                <Label>한글 글자 크기 (기본: 15px)</Label>
+                <input
+                  value={verse.koFontSize || ""}
+                  onChange={(e) => {
+                    const updated = { ...verse, koFontSize: e.target.value };
+                    setVerse(updated);
+                    saveVerse(updated);
+                  }}
+                  placeholder="예: 15px"
+                  className={inputCls}
+                />
+              </div>
+              <div className="flex-1">
+                <Label>한글 자간 (기본: -0.4px)</Label>
+                <input
+                  value={verse.koLetterSpacing || ""}
+                  onChange={(e) => {
+                    const updated = { ...verse, koLetterSpacing: e.target.value };
+                    setVerse(updated);
+                    saveVerse(updated);
+                  }}
+                  placeholder="예: -0.4px"
+                  className={inputCls}
+                />
+              </div>
             </div>
             <div>
               <Label>한글 구절</Label>

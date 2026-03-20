@@ -17,6 +17,10 @@ export interface IntroData {
   title: string;          // 섹션 제목 (예: "동북시찰청년연합회")
   paragraphs: string[];   // 소개 문단 배열
   align?: "left" | "center" | "right"; // 텍스트 정렬
+  fontSize?: string;      // 글자 크기 (예: "15px")
+  letterSpacing?: string; // 자간 (예: "-0.4px")
+  titleFontSize?: string; // 제목 글자 크기 (예: "28px")
+  titleLetterSpacing?: string; // 제목 자간 (예: "-0.6px")
 }
 
 export interface HomeData {
@@ -64,6 +68,8 @@ const DEFAULT_INTRO: IntroData = {
     "각 교회의 청년들이 함께 모여 신앙 안에서 교제하고,\n말씀과 섬김을 통해 하나님 나라의 가치를 실천하며,\n지역과 교회를 섬기기 위해 활동하고 있습니다.",
     "서로 다른 교회에 속해 있지만,\n하나의 믿음 안에서 연합하여\n청년들이 신앙과 삶 속에서 함께 성장하고,\n다음 세대를 세워가는 것을 목표로 하고 있습니다.",
   ],
+  fontSize: "15px",
+  letterSpacing: "-0.4px",
 };
 
 export const DEFAULT_HOME: HomeData = {

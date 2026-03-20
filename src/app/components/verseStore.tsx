@@ -11,6 +11,10 @@ export interface VerseData {
   verseKo: string;     // 한글 구절 본문
   referenceKo: string; // 한글 출처 (예: "마태복음 18장 20절")
   align: "left" | "center" | "right"; // 텍스트 정렬
+  enFontSize?: string;
+  enLetterSpacing?: string;
+  koFontSize?: string;
+  koLetterSpacing?: string;
 }
 
 const STORAGE_KEY = "admin_verse";

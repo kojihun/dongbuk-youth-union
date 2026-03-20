@@ -188,6 +188,26 @@ export default function VerseAdminPage() {
                   ))}
                 </div>
               </div>
+              <div className="flex flex-col sm:flex-row gap-[16px]">
+                <div className="flex-1">
+                  <Label>영문 글자 크기 (기본: 44px)</Label>
+                  <input
+                    value={verse.enFontSize || ""}
+                    onChange={(e) => setVerse({ ...verse, enFontSize: e.target.value })}
+                    placeholder="예: 44px"
+                    className={inputCls}
+                  />
+                </div>
+                <div className="flex-1">
+                  <Label>영문 자간 (기본: -2.2px)</Label>
+                  <input
+                    value={verse.enLetterSpacing || ""}
+                    onChange={(e) => setVerse({ ...verse, enLetterSpacing: e.target.value })}
+                    placeholder="예: -2.2px"
+                    className={inputCls}
+                  />
+                </div>
+              </div>
               <div>
                 <Label>영문 구절 (줄바꿈으로 행 구분)</Label>
                 <textarea
@@ -207,6 +227,26 @@ export default function VerseAdminPage() {
                   placeholder="예: Matthew 18:20"
                   className={inputCls}
                 />
+              </div>
+              <div className="flex flex-col sm:flex-row gap-[16px]">
+                <div className="flex-1">
+                  <Label>한글 글자 크기 (기본: 15px)</Label>
+                  <input
+                    value={verse.koFontSize || ""}
+                    onChange={(e) => setVerse({ ...verse, koFontSize: e.target.value })}
+                    placeholder="예: 15px"
+                    className={inputCls}
+                  />
+                </div>
+                <div className="flex-1">
+                  <Label>한글 자간 (기본: -0.4px)</Label>
+                  <input
+                    value={verse.koLetterSpacing || ""}
+                    onChange={(e) => setVerse({ ...verse, koLetterSpacing: e.target.value })}
+                    placeholder="예: -0.4px"
+                    className={inputCls}
+                  />
+                </div>
               </div>
               <div>
                 <Label>한글 구절</Label>
