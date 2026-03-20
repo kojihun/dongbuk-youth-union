@@ -80,6 +80,23 @@ export function getHomeData(): HomeData {
       // 기존 데이터에 필드가 없으면 기본값 적용
       if (!parsed.navLinks) parsed.navLinks = DEFAULT_NAV_LINKS;
       if (!parsed.intro) parsed.intro = DEFAULT_INTRO;
+
+      // 마이그레이션: 다시 "소속교회"를 "Affiliated Church"로 원복
+      if (parsed.navLinks) {
+        let migrated = false;
+        parsed.navLinks = parsed.navLinks.map((link: NavLinkItem) => {
+          if (link.label === "소속교회") {
+            migrated = true;
+            return { ...link, label: "Affiliated Church" };
+          }
+          return link;
+        });
+        if (migrated) {
+          // 백그라운드에서 변경된 데이터를 다시 저장
+          setTimeout(() => saveHomeData(parsed), 0);
+        }
+      }
+
       return parsed;
     }
   } catch {

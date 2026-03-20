@@ -51,7 +51,14 @@ function LogoContain() {
   const { navLinks } = getHomeData();
   const visibleLinks = navLinks.filter((l) => l.visible);
   const linkCls =
-    "font-['Instrument_Sans:Regular',sans-serif] font-normal text-[10px] md:text-[11px] lg:text-[13px] text-[#999] tracking-[-0.4px] hover:text-black transition-colors no-underline whitespace-nowrap";
+    "group relative flex items-center justify-center font-['Instrument_Sans:Regular',sans-serif] font-normal text-[10px] md:text-[11px] lg:text-[13px] text-[#999] tracking-[-0.4px] hover:text-black transition-colors no-underline whitespace-nowrap";
+
+  const hoverMapping: Record<string, string> = {
+    "Affiliated Church": "소속교회",
+    "Contact": "문의",
+    "Instagram": "인스타그램",
+    "Band": "밴드"
+  };
 
   return (
     <div
@@ -72,8 +79,15 @@ function LogoContain() {
       <div className="flex-1" />
       <div className="flex items-end md:h-[126px] pr-[0px] md:pr-[12px] lg:pr-[16px] self-end">
         <nav className="flex items-center gap-[12px] md:gap-[28px] lg:gap-[36px] pb-[1px]">
-          {visibleLinks.map((link) =>
-            link.isExternal ? (
+          {visibleLinks.map((link) => {
+            const koLabel = hoverMapping[link.label] || link.label;
+            const content = (
+              <div className="grid place-items-center">
+                <span className="col-start-1 row-start-1 group-hover:opacity-0 transition-opacity duration-300 whitespace-nowrap">{link.label}</span>
+                <span className="col-start-1 row-start-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 font-['Noto_Sans_KR:Regular',sans-serif] text-[#999] whitespace-nowrap">{koLabel}</span>
+              </div>
+            );
+            return link.isExternal ? (
               <a
                 key={link.id}
                 href={link.url}
@@ -82,7 +96,7 @@ function LogoContain() {
                 className={linkCls}
                 style={{ fontVariationSettings: "'wdth' 100" }}
               >
-                {link.label}
+                {content}
               </a>
             ) : (
               <Link
@@ -91,10 +105,10 @@ function LogoContain() {
                 className={linkCls}
                 style={{ fontVariationSettings: "'wdth' 100" }}
               >
-                {link.label}
+                {content}
               </Link>
-            )
-          )}
+            );
+          })}
           <Link
             to="/ci"
             className={linkCls}
@@ -334,15 +348,23 @@ function TextLink4() {
     >
       <Link
         to="/projects"
-        className="flex font-['Instrument_Sans:Medium',sans-serif] font-medium gap-[3px] items-center leading-[1.1] relative shrink-0 text-[#767676] text-[16px] md:text-[20px] tracking-[-0.6px] whitespace-nowrap hover:text-black transition-colors no-underline"
+        className="group flex font-['Instrument_Sans:Medium',sans-serif] font-medium gap-[3px] items-center leading-[1.1] relative shrink-0 text-[#767676] text-[16px] md:text-[20px] tracking-[-0.6px] whitespace-nowrap transition-colors no-underline"
         data-name="Text link"
       >
-        <p
-          className="relative shrink-0"
-          style={{ fontVariationSettings: "'wdth' 100" }}
-        >
-          Explore
-        </p>
+        <div className="grid place-items-center shrink-0">
+          <p
+            className="col-start-1 row-start-1 group-hover:opacity-0 transition-opacity duration-300 whitespace-nowrap"
+            style={{ fontVariationSettings: "'wdth' 100" }}
+          >
+            Explore
+          </p>
+          <p
+            className="col-start-1 row-start-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 font-['Noto_Sans_KR:Medium',sans-serif] text-[#767676] text-[15px] md:text-[18px] whitespace-nowrap"
+            style={{ fontVariationSettings: "'wdth' 100" }}
+          >
+            더 알아보기
+          </p>
+        </div>
         <p
           className="relative shrink-0"
           style={{ fontVariationSettings: "'wdth' 100" }}

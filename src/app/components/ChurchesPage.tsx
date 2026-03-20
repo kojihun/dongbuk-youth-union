@@ -408,7 +408,7 @@ export default function ChurchesPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              Affiliated Church
+              소속교회
             </motion.p>
           </div>
         </div>
