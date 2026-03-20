@@ -401,15 +401,20 @@ export default function ChurchesPage() {
             )}
           </div>
           <div>
-            <motion.p
-              className="font-['Instrument_Sans:Regular',sans-serif] text-[28px] md:text-[36px] lg:text-[44px] text-black tracking-[-1.4px] md:tracking-[-1.8px] lg:tracking-[-2.2px] leading-[1.1]"
+            <motion.div
+              className="group grid place-items-start font-['Instrument_Sans:Regular',sans-serif] text-[28px] md:text-[36px] lg:text-[44px] text-black tracking-[-1.4px] md:tracking-[-1.8px] lg:tracking-[-2.2px] leading-[1.1]"
               style={{ fontVariationSettings: "'wdth' 100" }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              소속교회
-            </motion.p>
+              <p className="col-start-1 row-start-1 group-hover:opacity-0 transition-opacity duration-300 m-0">
+                Affiliated Church
+              </p>
+              <p className="col-start-1 row-start-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 font-['Noto_Sans_KR:Medium',sans-serif] tracking-[-1.4px] md:tracking-[-1.8px] lg:tracking-[-2.2px] m-0">
+                소속교회
+              </p>
+            </motion.div>
           </div>
         </div>
         <motion.p

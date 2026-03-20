@@ -63,6 +63,13 @@ export const router = createBrowserRouter([
       })),
   },
   {
+    path: "/admin/contact",
+    lazy: () =>
+      import("./components/ContactAdminPage").then((m) => ({
+        Component: m.default,
+      })),
+  },
+  {
     path: "/ci",
     lazy: () =>
       import("./components/CiManualPage").then((m) => ({

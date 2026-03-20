@@ -270,7 +270,7 @@ function OurWorkSection() {
 function OurWorkContent1() {
   return (
     <motion.div
-      className="relative w-full"
+      className="relative w-full group grid place-items-start"
       data-name="Our work content"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
@@ -278,10 +278,16 @@ function OurWorkContent1() {
       transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
     >
       <p
-        className="font-['Instrument_Sans:Regular',sans-serif] font-normal leading-none text-[20px] md:text-[24px] text-black tracking-[-1.2px] whitespace-nowrap"
+        className="col-start-1 row-start-1 group-hover:opacity-0 transition-opacity duration-300 font-['Instrument_Sans:Regular',sans-serif] font-normal leading-none text-[20px] md:text-[24px] text-black tracking-[-1.2px] whitespace-nowrap m-0"
         style={{ fontVariationSettings: "'wdth' 100" }}
       >
         Our Ministry
+      </p>
+      <p
+        className="col-start-1 row-start-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 font-['Noto_Sans_KR:Medium',sans-serif] leading-none text-[20px] md:text-[24px] text-black tracking-[-1.2px] whitespace-nowrap m-0"
+        style={{ fontVariationSettings: "'wdth' 100" }}
+      >
+        사역 소개
       </p>
     </motion.div>
   );
@@ -488,16 +494,26 @@ function UpcomingEventsSection() {
     <div className="flex flex-col items-start px-[15px] md:px-[24px] py-[10px] md:py-[14px] relative w-full max-w-[1035px]">
       <div className="relative w-full">
         <div className="pt-[30px] md:pt-[40px] pb-[20px] md:pb-[30px] w-full">
-          <motion.p
-            className="font-['Instrument_Sans:Regular',sans-serif] font-normal leading-none text-[20px] md:text-[24px] text-black tracking-[-1.2px] whitespace-nowrap mb-[20px] md:mb-[28px]"
-            style={{ fontVariationSettings: "'wdth' 100" }}
+          <motion.div
+            className="group grid place-items-start mb-[20px] md:mb-[28px]"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: false, amount: 0.3 }}
             transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
           >
-            Upcoming
-          </motion.p>
+            <p
+              className="col-start-1 row-start-1 group-hover:opacity-0 transition-opacity duration-300 font-['Instrument_Sans:Regular',sans-serif] font-normal leading-none text-[20px] md:text-[24px] text-black tracking-[-1.2px] whitespace-nowrap m-0"
+              style={{ fontVariationSettings: "'wdth' 100" }}
+            >
+              Upcoming
+            </p>
+            <p
+              className="col-start-1 row-start-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 font-['Noto_Sans_KR:Medium',sans-serif] leading-none text-[20px] md:text-[24px] text-black tracking-[-1.2px] whitespace-nowrap m-0"
+              style={{ fontVariationSettings: "'wdth' 100" }}
+            >
+              일정
+            </p>
+          </motion.div>
 
           {visibleEvents.length === 0 ? (
             <motion.div
@@ -573,15 +589,14 @@ function ContactContain() {
       className="bg-white flex flex-col gap-[10px] items-center md:items-start relative shrink-0 font-['Instrument_Sans:Regular',sans-serif] font-normal text-[#767676] text-[11px] tracking-[-0.55px]"
       data-name="Contact contain"
     >
-      <a
-        href="https://docs.google.com/forms/d/e/1FAIpQLSemrPx-mGpGJSTiK5GR0aIUe1QW83Fs_mZC_mZUxM9cOZMrow/viewform?usp=publish-editor"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="leading-none hover:text-black transition-colors no-underline mb-[10px] md:mb-[20px]"
+      <Link
+        to="/contact"
+        className="group grid place-items-start leading-none hover:text-black transition-colors no-underline mb-[10px] md:mb-[20px]"
         style={{ fontVariationSettings: "'wdth' 100" }}
       >
-        CONTACT
-      </a>
+        <span className="col-start-1 row-start-1 group-hover:opacity-0 transition-opacity duration-300">CONTACT</span>
+        <span className="col-start-1 row-start-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 font-['Noto_Sans_KR:Regular',sans-serif] text-[#999]">문의</span>
+      </Link>
       <p
         className="font-['Noto_Sans_KR:Regular',sans-serif] leading-none tracking-[-0.3px]"
         style={{ fontVariationSettings: "'wdth' 100" }}
@@ -622,20 +637,22 @@ function SocialLinks1() {
       data-name="Social links"
     >
       <a
-        className="block leading-[0] relative"
+        className="group grid place-items-start leading-[0] relative hover:text-black transition-colors no-underline cursor-pointer"
         href="https://www.instagram.com/jeju.youth_dongbook?igsh=ZTA2OHBwczJocWk2"
         target="_blank"
         rel="noopener noreferrer"
         style={{ fontVariationSettings: "'wdth' 100" }}
       >
-        <p className="cursor-pointer leading-none">Instagram</p>
+        <p className="col-start-1 row-start-1 group-hover:opacity-0 transition-opacity duration-300 leading-none m-0">Instagram</p>
+        <p className="col-start-1 row-start-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 font-['Noto_Sans_KR:Regular',sans-serif] text-[#999] leading-none m-0">인스타그램</p>
       </a>
-      <p
-        className="leading-none relative"
+      <div
+        className="group grid place-items-start leading-[0] relative hover:text-black transition-colors cursor-pointer"
         style={{ fontVariationSettings: "'wdth' 100" }}
       >
-        Band
-      </p>
+        <p className="col-start-1 row-start-1 group-hover:opacity-0 transition-opacity duration-300 leading-none m-0">Band</p>
+        <p className="col-start-1 row-start-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 font-['Noto_Sans_KR:Regular',sans-serif] text-[#999] leading-none m-0">밴드</p>
+      </div>
       <button
         onClick={() => setShowPasswordModal(true)}
         className="text-[#ccc] hover:text-[#999] active:text-[#999] transition-colors duration-300 p-[4px] cursor-pointer bg-transparent border-none mt-[2px]"

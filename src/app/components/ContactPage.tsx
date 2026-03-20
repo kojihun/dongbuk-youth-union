@@ -1,8 +1,10 @@
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
-import { ArrowLeft, Send, CheckCircle, Lock, Eye, EyeOff, X } from "lucide-react";
+import { ArrowLeft, Send, CheckCircle, Lock, Eye, EyeOff, X, Settings } from "lucide-react";
 import { useState } from "react";
 import { getBrandImages } from "./brandStore";
+import { getContacts, addContact, type Submission } from "./contactStore";
+import { verifyPassword } from "./passwordStore";
 
 const categories = [
   "연합 예배",
@@ -12,18 +14,10 @@ const categories = [
   "찬양 집회",
   "세미나 / 강연",
   "친교 행사",
+  "신규가입",
   "기타",
 ];
 
-interface Submission {
-  id: number;
-  name: string;
-  church: string;
-  category: string;
-  message: string;
-  password: string;
-  date: string;
-}
 
 export default function ContactPage() {
   const [name, setName] = useState("");
@@ -33,7 +27,8 @@ export default function ContactPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const navigate = useNavigate();
+  const [submissions, setSubmissions] = useState<Submission[]>(getContacts());
 
   // Password modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -42,6 +37,23 @@ export default function ContactPage() {
   const [showModalPassword, setShowModalPassword] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
   const [unlockedIds, setUnlockedIds] = useState<Set<number>>(new Set());
+
+  // Admin routing state
+  const [showAdminPasswordModal, setShowAdminPasswordModal] = useState(false);
+  const [adminPassword, setAdminPassword] = useState("");
+  const [adminError, setAdminError] = useState("");
+
+  const handleAdminPasswordSubmit = () => {
+    if (verifyPassword(adminPassword)) {
+      setShowAdminPasswordModal(false);
+      setAdminPassword("");
+      setAdminError("");
+      navigate("/admin/contact");
+    } else {
+      setAdminError("비밀번호가 올바르지 않습니다");
+      setAdminPassword("");
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +73,8 @@ export default function ContactPage() {
       }),
     };
 
-    setSubmissions((prev) => [newSubmission, ...prev]);
+    addContact(newSubmission);
+    setSubmissions(getContacts());
     setName("");
     setChurch("");
     setCategory("");
@@ -136,15 +149,20 @@ export default function ContactPage() {
             )}
           </div>
           <div>
-            <motion.p
-              className="font-['Instrument_Sans:Regular',sans-serif] text-[28px] md:text-[36px] lg:text-[44px] text-black tracking-[-1.4px] md:tracking-[-1.8px] lg:tracking-[-2.2px] leading-[1.1]"
+            <motion.div
+              className="group grid place-items-start font-['Instrument_Sans:Regular',sans-serif] text-[28px] md:text-[36px] lg:text-[44px] text-black tracking-[-1.4px] md:tracking-[-1.8px] lg:tracking-[-2.2px] leading-[1.1]"
               style={{ fontVariationSettings: "'wdth' 100" }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              Contact
-            </motion.p>
+              <p className="col-start-1 row-start-1 group-hover:opacity-0 transition-opacity duration-300 m-0">
+                Contact
+              </p>
+              <p className="col-start-1 row-start-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 font-['Noto_Sans_KR:Medium',sans-serif] tracking-[-1.4px] md:tracking-[-1.8px] lg:tracking-[-2.2px] m-0">
+                문의
+              </p>
+            </motion.div>
           </div>
         </div>
         <motion.p
@@ -510,15 +528,93 @@ export default function ContactPage() {
           >
             동북시찰청년연합회 대한예수교장로회(통합)
           </p>
-          <Link
-            to="/"
-            className="font-['Instrument_Sans:Regular',sans-serif] text-[11px] text-[#767676] tracking-[-0.55px] hover:text-black transition-colors"
-            style={{ fontVariationSettings: "'wdth' 100" }}
-          >
-            Back to Home
-          </Link>
+          <div className="flex items-center gap-[12px]">
+            <Link
+              to="/"
+              className="font-['Instrument_Sans:Regular',sans-serif] text-[11px] text-[#767676] tracking-[-0.55px] hover:text-black transition-colors"
+              style={{ fontVariationSettings: "'wdth' 100" }}
+            >
+              Back to Home
+            </Link>
+            <button
+              onClick={() => setShowAdminPasswordModal(true)}
+              className="text-[#ccc] hover:text-[#999] active:text-[#999] transition-colors duration-300 p-[4px] cursor-pointer bg-transparent border-none"
+              aria-label="의견 관리자페이지 이동"
+            >
+              <Settings size={13} />
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Admin Password Modal */}
+      <AnimatePresence>
+        {showAdminPasswordModal && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/40"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => { setShowAdminPasswordModal(false); setAdminPassword(""); setAdminError(""); }}
+          >
+            <motion.div
+              className="bg-white w-full md:w-[320px] md:rounded-[12px] rounded-t-[16px] p-[24px] md:p-[32px] shadow-lg"
+              initial={{ opacity: 0, y: 60 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 60 }}
+              transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-[36px] h-[4px] bg-[#ddd] rounded-full mx-auto mb-[20px] md:hidden" />
+              <p
+                className="font-['Noto_Sans_KR:Medium',sans-serif] font-medium text-[16px] text-black tracking-[-0.4px] mb-[8px]"
+                style={{ fontVariationSettings: "'wdth' 100" }}
+              >
+                관리자 인증
+              </p>
+              <p
+                className="font-['Noto_Sans_KR:Regular',sans-serif] font-normal text-[13px] text-[#999] tracking-[-0.3px] mb-[20px]"
+                style={{ fontVariationSettings: "'wdth' 100" }}
+              >
+                비밀번호를 입력해주세요
+              </p>
+              <input
+                type="password"
+                inputMode="numeric"
+                value={adminPassword}
+                onChange={(e) => { setAdminPassword(e.target.value); setAdminError(""); }}
+                onKeyDown={(e) => { if (e.key === "Enter") handleAdminPasswordSubmit(); }}
+                placeholder="비밀번호"
+                autoFocus
+                className="w-full border border-[#ddd] rounded-[8px] px-[14px] py-[12px] text-[16px] font-['Noto_Sans_KR:Regular',sans-serif] tracking-[-0.3px] outline-none focus:border-[#4a6741] transition-colors"
+              />
+              {adminError && (
+                <p
+                  className="font-['Noto_Sans_KR:Regular',sans-serif] font-normal text-[12px] text-red-500 tracking-[-0.3px] mt-[8px]"
+                  style={{ fontVariationSettings: "'wdth' 100" }}
+                >
+                  {adminError}
+                </p>
+              )}
+              <div className="flex gap-[8px] mt-[20px]">
+                <button
+                  onClick={() => { setShowAdminPasswordModal(false); setAdminPassword(""); setAdminError(""); }}
+                  className="flex-1 font-['Noto_Sans_KR:Regular',sans-serif] font-normal text-[13px] text-[#767676] tracking-[-0.3px] px-[16px] py-[11px] rounded-[8px] border border-[#ddd] active:border-[#999] hover:border-[#999] transition-colors cursor-pointer bg-white"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleAdminPasswordSubmit}
+                  className="flex-1 font-['Noto_Sans_KR:Medium',sans-serif] font-medium text-[13px] text-white tracking-[-0.3px] px-[16px] py-[11px] rounded-[8px] bg-[#4a6741] active:bg-[#3d5636] hover:bg-[#3d5636] transition-colors cursor-pointer border-none"
+                >
+                  확인
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -37,8 +37,8 @@ const DEFAULT_NAV_LINKS: NavLinkItem[] = [
   {
     id: "nav-2",
     label: "Contact",
-    url: "https://docs.google.com/forms/d/e/1FAIpQLSemrPx-mGpGJSTiK5GR0aIUe1QW83Fs_mZC_mZUxM9cOZMrow/viewform?usp=publish-editor",
-    isExternal: true,
+    url: "/contact",
+    isExternal: false,
     visible: true,
   },
   {
@@ -81,13 +81,18 @@ export function getHomeData(): HomeData {
       if (!parsed.navLinks) parsed.navLinks = DEFAULT_NAV_LINKS;
       if (!parsed.intro) parsed.intro = DEFAULT_INTRO;
 
-      // 마이그레이션: 다시 "소속교회"를 "Affiliated Church"로 원복
+      // 마이그레이션: "Contact" 링크를 내부 /contact 로 변경 및 기타 원복
       if (parsed.navLinks) {
         let migrated = false;
         parsed.navLinks = parsed.navLinks.map((link: NavLinkItem) => {
           if (link.label === "소속교회") {
             migrated = true;
-            return { ...link, label: "Affiliated Church" };
+            link.label = "Affiliated Church";
+          }
+          if (link.label === "Contact" && link.isExternal) {
+            migrated = true;
+            link.url = "/contact";
+            link.isExternal = false;
           }
           return link;
         });
