@@ -375,7 +375,12 @@ export default function HomeAdminPage() {
         canvas.height = h;
         const ctx = canvas.getContext("2d")!;
         ctx.drawImage(img, 0, 0, w, h);
-        const base64 = canvas.toDataURL("image/jpeg", 0.8);
+        // PNG/WebP 등 투명 배경 지원 포맷은 그대로 유지, 나머지는 JPEG
+        const isPng = file.type === "image/png" || file.name.toLowerCase().endsWith(".png");
+        const isWebp = file.type === "image/webp" || file.name.toLowerCase().endsWith(".webp");
+        const format = isPng ? "image/png" : isWebp ? "image/webp" : "image/jpeg";
+        const quality = isPng ? undefined : 0.8;
+        const base64 = canvas.toDataURL(format, quality);
         const updated = { ...brandImages, [key]: base64 };
         setBrandImages(updated);
         saveBrandImages(updated);
