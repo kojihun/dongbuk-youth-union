@@ -101,22 +101,18 @@ export function initDataFromServer(): Promise<void> {
 
   _initPromise = (async () => {
     try {
-      // 순차적으로 가져옴 (병렬 요청이 서버 연결을 압도하여 끊김 발생 방지)
+      const data = await serverBatchGet(ALL_KEYS);
       for (const key of ALL_KEYS) {
-        try {
-          const value = await serverGet(key);
-          if (value !== undefined && value !== null) {
-            if (key === "admin_password") {
-              localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
-            } else {
-              localStorage.setItem(key, JSON.stringify(value));
-            }
+        if (data[key] !== undefined && data[key] !== null) {
+          const value = data[key];
+          if (key === "admin_password") {
+            localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
+          } else {
+            localStorage.setItem(key, JSON.stringify(value));
           }
-        } catch (e) {
-          console.log(`[dataSync] Failed to load key "${key}":`, e);
         }
       }
-      console.log("[dataSync] Server data loaded into localStorage");
+      console.log("[dataSync] Server batch data loaded into localStorage");
     } catch (e) {
       console.log("[dataSync] initDataFromServer error:", e);
     }

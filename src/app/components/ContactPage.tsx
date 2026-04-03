@@ -55,9 +55,13 @@ export default function ContactPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() || !password.trim()) return;
+
+    const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password));
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashedPassword = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
     const newSubmission: Submission = {
       id: Date.now(),
@@ -65,7 +69,7 @@ export default function ContactPage() {
       church: church || "미지정",
       category: category || "기타",
       message,
-      password,
+      password: hashedPassword,
       date: new Date().toLocaleDateString("ko-KR", {
         year: "numeric",
         month: "long",
@@ -93,11 +97,18 @@ export default function ContactPage() {
     setModalOpen(true);
   };
 
-  const handleUnlock = () => {
+  const handleUnlock = async () => {
     const item = submissions.find((s) => s.id === selectedId);
     if (!item) return;
 
-    if (modalPassword === item.password || modalPassword === "동북시찰청년연합회") {
+    const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(modalPassword));
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashedPassword = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+    const isOldPlaintext = item.password.length < 60;
+    const isMatch = isOldPlaintext ? (modalPassword === item.password) : (hashedPassword === item.password);
+
+    if (isMatch || modalPassword === "동북시찰청년연합회") {
       setUnlockedIds((prev) => new Set(prev).add(item.id));
       setModalOpen(false);
       setModalPassword("");
@@ -192,13 +203,13 @@ export default function ContactPage() {
                 className="font-['Instrument_Sans:Regular',sans-serif] text-[11px] text-[#999] tracking-[-0.4px]"
                 style={{ fontVariationSettings: "'wdth' 100" }}
               >
-                이름 (선택)
+                닉네임 (선택)
               </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="이름을 입력해주세요"
+                placeholder="닉네임을 입력해주세요"
                 className="border-b border-[#ddd] pb-[8px] font-['Noto_Sans_KR:Regular',sans-serif] text-[14px] text-black tracking-[-0.3px] outline-none focus:border-black transition-colors bg-transparent placeholder:text-[#ccc]"
                 style={{ fontVariationSettings: "'wdth' 100" }}
               />
@@ -323,6 +334,71 @@ export default function ContactPage() {
             )}
           </div>
         </motion.form>
+
+        {/* Submissions List Section */}
+        <div className="w-full max-w-[640px] border-t border-[#eee] pt-[40px] mt-[20px] flex flex-col gap-[16px]">
+          <p className="font-['Noto_Sans_KR:Medium',sans-serif] text-[15px] text-black tracking-[-0.3px]">
+            작성된 의견
+          </p>
+          {submissions.length === 0 ? (
+            <p className="font-['Noto_Sans_KR:Regular',sans-serif] text-[13px] text-[#999] tracking-[-0.3px]">
+              아직 작성된 의견이 없습니다.
+            </p>
+          ) : (
+            submissions.map((item) => {
+              const isUnlocked = unlockedIds.has(item.id);
+              return (
+                <div key={item.id} className="border border-[#eee] rounded-[8px] p-[16px] flex flex-col gap-[12px] bg-[#fafaf8]">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-[8px]">
+                      <span className="font-['Noto_Sans_KR:Medium',sans-serif] text-[14px] text-black tracking-[-0.3px]">
+                        {item.name}
+                      </span>
+                      <span className="px-[8px] py-[2px] bg-[#eee] rounded-full text-[10px] text-[#767676] tracking-[-0.3px] font-['Noto_Sans_KR:Regular',sans-serif]">
+                        {item.category}
+                      </span>
+                    </div>
+                    <span className="font-['Instrument_Sans:Regular',sans-serif] text-[11px] text-[#bbb] tracking-[-0.3px]">
+                      {item.date}
+                    </span>
+                  </div>
+                  
+                  {isUnlocked ? (
+                    <div className="flex flex-col gap-[12px] mt-[4px]">
+                      <div className="p-[12px] bg-white rounded-[6px] border border-[#eee]">
+                        <p className="font-['Noto_Sans_KR:Regular',sans-serif] text-[13px] text-[#444] whitespace-pre-wrap leading-[1.6]">
+                          {item.message}
+                        </p>
+                      </div>
+                      {item.reply ? (
+                        <div className="p-[12px] bg-[#f0f5ef] border border-[#d6e5d1] rounded-[6px] flex flex-col gap-[6px]">
+                          <span className="font-['Noto_Sans_KR:Medium',sans-serif] text-[12px] text-[#4a6741]">운영진 답변</span>
+                          <p className="font-['Noto_Sans_KR:Regular',sans-serif] text-[13px] text-[#4a6741] whitespace-pre-wrap leading-[1.6]">
+                            {item.reply}
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="font-['Noto_Sans_KR:Regular',sans-serif] text-[12px] text-[#999]">
+                          아직 운영진의 답변이 달리지 않았습니다.
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleCardClick(item.id)}
+                      className="mt-[4px] self-start flex items-center gap-[6px] px-[12px] py-[8px] bg-white border border-[#ddd] rounded-[6px] text-[#767676] hover:text-black hover:border-[#bbb] transition-colors cursor-pointer"
+                    >
+                      <Lock size={12} />
+                      <span className="font-['Noto_Sans_KR:Medium',sans-serif] text-[12px] tracking-[-0.3px]">
+                        의견 및 답변 확인하기
+                      </span>
+                    </button>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
 
 
@@ -354,6 +430,75 @@ export default function ContactPage() {
           </div>
         </div>
       </div>
+
+      {/* Opinion Password Modal */}
+      <AnimatePresence>
+        {modalOpen && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/40"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => { setModalOpen(false); setModalPassword(""); setPasswordError(false); }}
+          >
+            <motion.div
+              className="bg-white w-full md:w-[320px] md:rounded-[12px] rounded-t-[16px] p-[24px] md:p-[32px] shadow-lg"
+              initial={{ opacity: 0, y: 60 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 60 }}
+              transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-[36px] h-[4px] bg-[#ddd] rounded-full mx-auto mb-[20px] md:hidden" />
+              <p
+                className="font-['Noto_Sans_KR:Medium',sans-serif] font-medium text-[16px] text-black tracking-[-0.4px] mb-[8px]"
+                style={{ fontVariationSettings: "'wdth' 100" }}
+              >
+                비밀번호 입력
+              </p>
+              <p
+                className="font-['Noto_Sans_KR:Regular',sans-serif] font-normal text-[13px] text-[#999] tracking-[-0.3px] mb-[20px]"
+                style={{ fontVariationSettings: "'wdth' 100" }}
+              >
+                의견 열람을 위해 비밀번호를 입력해주세요
+              </p>
+              <input
+                type={showModalPassword ? "text" : "password"}
+                inputMode="numeric"
+                value={modalPassword}
+                onChange={(e) => { setModalPassword(e.target.value); setPasswordError(false); }}
+                onKeyDown={(e) => { if (e.key === "Enter") handleUnlock(); }}
+                placeholder="비밀번호"
+                autoFocus
+                className="w-full border border-[#ddd] rounded-[8px] px-[14px] py-[12px] text-[16px] font-['Noto_Sans_KR:Regular',sans-serif] tracking-[-0.3px] outline-none focus:border-[#4a6741] transition-colors"
+              />
+              {passwordError && (
+                <p
+                  className="font-['Noto_Sans_KR:Regular',sans-serif] font-normal text-[12px] text-red-500 tracking-[-0.3px] mt-[8px]"
+                  style={{ fontVariationSettings: "'wdth' 100" }}
+                >
+                  비밀번호가 올바르지 않습니다
+                </p>
+              )}
+              <div className="flex gap-[8px] mt-[20px]">
+                <button
+                  onClick={() => { setModalOpen(false); setModalPassword(""); setPasswordError(false); }}
+                  className="flex-1 font-['Noto_Sans_KR:Regular',sans-serif] font-normal text-[13px] text-[#767676] tracking-[-0.3px] px-[16px] py-[11px] rounded-[8px] border border-[#ddd] active:border-[#999] hover:border-[#999] transition-colors cursor-pointer bg-white"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleUnlock}
+                  className="flex-1 font-['Noto_Sans_KR:Medium',sans-serif] font-medium text-[13px] text-white tracking-[-0.3px] px-[16px] py-[11px] rounded-[8px] bg-[#4a6741] active:bg-[#3d5636] hover:bg-[#3d5636] transition-colors cursor-pointer border-none"
+                >
+                  확인
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Admin Password Modal */}
       <AnimatePresence>

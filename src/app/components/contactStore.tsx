@@ -10,6 +10,7 @@ export interface Submission {
   message: string;
   password: string;
   date: string;
+  reply?: string;
 }
 
 export function getContacts(): Submission[] {
@@ -37,4 +38,10 @@ export function deleteContact(id: number): void {
   const contacts = getContacts();
   const filtered = contacts.filter((c) => c.id !== id);
   saveContacts(filtered);
+}
+
+export function updateContact(id: number, updates: Partial<Submission>): void {
+  const contacts = getContacts();
+  const updated = contacts.map(c => c.id === id ? { ...c, ...updates } : c);
+  saveContacts(updated);
 }

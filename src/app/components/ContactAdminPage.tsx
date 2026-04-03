@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { ArrowLeft, Trash2 } from "lucide-react";
-import { getContacts, deleteContact, type Submission } from "./contactStore";
+import { getContacts, deleteContact, updateContact, type Submission } from "./contactStore";
 
 const fv = { fontVariationSettings: "'wdth' 100" };
 
@@ -9,6 +9,20 @@ export default function ContactAdminPage() {
   const navigate = useNavigate();
   const [contacts, setContacts] = useState<Submission[]>(() => getContacts());
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [replyInputs, setReplyInputs] = useState<Record<number, string>>({});
+
+  const handleReplyChange = (id: number, text: string) => {
+    setReplyInputs((prev) => ({ ...prev, [id]: text }));
+  };
+
+  const handleSaveReply = (id: number) => {
+    const text = replyInputs[id];
+    if (text !== undefined) {
+      updateContact(id, { reply: text });
+      setContacts(getContacts());
+      alert("답변이 저장되었습니다.");
+    }
+  };
 
   const removeContact = (id: number) => {
     deleteContact(id);
@@ -91,6 +105,25 @@ export default function ContactAdminPage() {
                   >
                     {contact.message}
                   </p>
+
+                  <div className="mt-[8px] flex flex-col gap-[6px]">
+                    <textarea 
+                      value={replyInputs[contact.id] ?? contact.reply ?? ""}
+                      onChange={(e) => handleReplyChange(contact.id, e.target.value)}
+                      placeholder="운영진 답변을 작성해주세요..."
+                      className="border border-[#ddd] rounded-[6px] p-[10px] font-['Noto_Sans_KR:Regular',sans-serif] text-[13px] text-[#4a6741] transition-colors focus:border-[#4a6741] outline-none min-h-[60px] resize-none bg-white"
+                      style={fv}
+                    />
+                    <div className="flex justify-end">
+                      <button 
+                        onClick={() => handleSaveReply(contact.id)}
+                        className="font-['Noto_Sans_KR:Medium',sans-serif] text-[12px] text-white tracking-[-0.3px] px-[14px] py-[8px] rounded-[6px] bg-[#4a6741] hover:bg-[#3d5636] transition-colors cursor-pointer border-none"
+                        style={fv}
+                      >
+                        답변 저장
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="shrink-0 flex items-start gap-[6px]">

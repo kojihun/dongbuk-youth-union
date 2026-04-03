@@ -32,13 +32,9 @@ export function getChurches(): ChurchItem[] {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const stored: ChurchItem[] = JSON.parse(raw);
-      // 기본 교회 목록과 병합 (새로 추가된 기본 교회 반영)
-      const storedIds = new Set(stored.map((c) => c.id));
-      const merged = [
-        ...stored,
-        ...DEFAULT_CHURCHES.filter((c) => !storedIds.has(c.id)),
-      ];
-      return merged;
+      // 저장된 데이터가 존재하면 기본 교회 목록과 병합하지 않고 저장된 상태를 그대로 반환합니다
+      // (삭제된 항목이 새로고침 시 다시 살아나는 현상 방지)
+      return stored;
     }
   } catch {
     /* ignore */

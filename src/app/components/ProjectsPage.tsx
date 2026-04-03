@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
-import { ArrowLeft, Settings, ExternalLink } from "lucide-react";
+import { ArrowLeft, Settings, ExternalLink, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getProjects, type ProjectItem } from "./projectStore";
 import { verifyPassword } from "./passwordStore";
@@ -20,58 +20,75 @@ const tagColors: Record<string, string> = {
 function ProjectCard({
   project,
   index,
+  onImageClick,
 }: {
   project: ProjectItem;
   index: number;
+  onImageClick?: (images: string[]) => void;
 }) {
+  const images = (() => {
+    if (!project.image) return [];
+    const tokens = project.image.split(',');
+    const result: string[] = [];
+    for (let i = 0; i < tokens.length; i++) {
+      let t = tokens[i].trim();
+      if (t.startsWith("data:") && i + 1 < tokens.length) {
+        result.push(t + ',' + tokens[i+1].trim());
+        i++;
+      } else if (t) {
+        result.push(t);
+      }
+    }
+    return result;
+  })();
+
   return (
     <motion.div
-      className="flex flex-col md:flex-row gap-[20px] md:gap-[32px] w-full"
+      className="flex flex-col md:flex-row gap-[24px] md:gap-[40px] w-full items-start"
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: index * 0.1 }}
     >
-      <div className="w-full md:w-[400px] lg:w-[460px] shrink-0 rounded-[6px] overflow-hidden aspect-[16/10]">
-        {project.image ? (
+      {images.length > 0 && (
+        <div 
+          className="w-full md:w-[400px] lg:w-[460px] shrink-0 rounded-[6px] overflow-hidden aspect-[16/10] relative group cursor-pointer"
+          onClick={() => onImageClick && onImageClick(images)}
+        >
           <img
-            src={project.image}
+            src={images[0]}
             alt={project.title}
-            className="w-full h-full object-cover transition-transform duration-500 ease-out hover:scale-[1.05]"
+            className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.05]"
           />
-        ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center bg-[#f5f5f3]">
-            <p
-              className="font-['Noto_Sans_KR:Regular',sans-serif] text-[12px] text-[#bbb] tracking-[-0.3px]"
-              style={{ fontVariationSettings: "'wdth' 100" }}
-            >
-              이미지 미등록
-            </p>
-          </div>
-        )}
-      </div>
-      <div className="flex flex-col justify-center gap-[12px] md:gap-[16px] flex-1 py-[4px]">
-        <div className="flex items-center gap-[10px]">
+          {images.length > 1 && (
+            <div className="absolute bottom-[12px] right-[12px] bg-black/60 text-white text-[12px] font-['Instrument_Sans:Regular',sans-serif] px-[10px] py-[4px] rounded-full flex items-center justify-center backdrop-blur-sm shadow-md">
+              + {images.length - 1}
+            </div>
+          )}
+        </div>
+      )}
+      <div className="flex flex-col justify-start gap-[14px] md:gap-[20px] flex-1 py-[4px] max-w-[760px]">
+        <div className="flex items-center gap-[12px]">
           <span
-            className={`inline-block px-[10px] py-[4px] rounded-full text-[11px] tracking-[-0.3px] ${tagColors[project.tag] || "bg-gray-100 text-gray-700"}`}
+            className={`inline-block px-[12px] py-[4px] rounded-full text-[12px] tracking-[-0.3px] ${tagColors[project.tag] || "bg-gray-100 text-gray-700"}`}
           >
             {project.tag}
           </span>
-          <span className="font-['Instrument_Sans:Regular',sans-serif] text-[12px] text-[#999] tracking-[-0.3px]">
+          <span className="font-['Instrument_Sans:Regular',sans-serif] text-[13px] md:text-[14px] text-[#999] tracking-[-0.3px]">
             {project.date}
           </span>
         </div>
         <h3
-          className="font-['Noto_Sans_KR:Medium',sans-serif] text-[18px] md:text-[20px] lg:text-[22px] text-black tracking-[-0.6px] leading-[1.4]"
+          className="font-['Noto_Sans_KR:Medium',sans-serif] text-[20px] md:text-[24px] lg:text-[26px] text-black tracking-[-0.8px] leading-[1.35] break-keep"
           style={{ fontVariationSettings: "'wdth' 100" }}
         >
           {project.title}
         </h3>
         <div
-          className="font-['Noto_Sans_KR:Regular',sans-serif] text-[13px] md:text-[14px] lg:text-[15px] text-[#767676] leading-[1.8] md:leading-[2]"
+          className="font-['Noto_Sans_KR:Regular',sans-serif] text-[14px] md:text-[15px] lg:text-[16px] text-[#555] leading-[1.7] md:leading-[1.8] break-keep"
           style={{ fontVariationSettings: "'wdth' 100" }}
         >
           {project.description.split("\n").map((line, i) => (
-            <span key={i} className="block" style={{ letterSpacing: "-0.6px" }}>
+            <span key={i} className="block min-h-[1.7em]" style={{ letterSpacing: "-0.4px" }}>
               {line}
             </span>
           ))}
@@ -81,10 +98,10 @@ function ProjectCard({
             href={project.pressUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-[6px] font-['Noto_Sans_KR:Medium',sans-serif] font-medium text-[12px] md:text-[13px] text-[#4a6741] tracking-[-0.3px] border border-[#4a6741]/30 rounded-full px-[14px] md:px-[16px] py-[7px] md:py-[8px] hover:bg-[#4a6741] hover:text-white transition-all duration-300 no-underline mt-[4px] w-fit"
+            className="inline-flex items-center gap-[6px] font-['Noto_Sans_KR:Medium',sans-serif] font-medium text-[13px] md:text-[14px] text-[#4a6741] tracking-[-0.3px] border border-[#4a6741]/30 rounded-full px-[16px] py-[8px] hover:bg-[#4a6741] hover:text-white transition-all duration-300 no-underline mt-[4px] md:mt-[8px] w-fit"
             style={{ fontVariationSettings: "'wdth' 100" }}
           >
-            <ExternalLink size={13} />
+            <ExternalLink size={14} />
             보도자료 보기
           </a>
         )}
@@ -102,6 +119,16 @@ export default function ProjectsPage() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [galleryIndex, setGalleryIndex] = useState(0);
+
+  const handleImageClick = (images: string[]) => {
+    setGalleryImages(images);
+    setGalleryIndex(0);
+    setGalleryOpen(true);
+  };
 
   const handlePasswordSubmit = () => {
     if (verifyPassword(password)) {
@@ -198,7 +225,7 @@ export default function ProjectsPage() {
               {visibleProjects
                 .filter((p) => p.year === year)
                 .map((project, i) => (
-                  <ProjectCard key={project.id} project={project} index={i} />
+                  <ProjectCard key={project.id} project={project} index={i} onImageClick={handleImageClick} />
                 ))}
             </div>
           </div>
@@ -298,6 +325,96 @@ export default function ProjectsPage() {
                 </button>
               </div>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 이미지 갤러리 모달 */}
+      <AnimatePresence>
+        {galleryOpen && galleryImages.length > 0 && (
+          <motion.div
+            className="fixed inset-0 z-[100] flex flex-col bg-[#050505] text-white"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setGalleryOpen(false)}
+          >
+            <div className="absolute top-[20px] right-[20px] z-10">
+              <button 
+                onClick={() => setGalleryOpen(false)}
+                className="p-[8px] bg-white/10 hover:bg-white/20 rounded-full transition-colors cursor-pointer border-none"
+              >
+                <X color="white" size={24} />
+              </button>
+            </div>
+
+            <div className="flex-1 flex items-center justify-center relative w-full h-full p-[20px] md:p-[60px]">
+              {galleryImages.length > 1 && (
+                <>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setGalleryIndex(prev => prev === 0 ? galleryImages.length - 1 : prev - 1); }}
+                    className="absolute left-[20px] md:left-[40px] z-10 p-[12px] bg-black/50 hover:bg-black/80 rounded-full transition-colors cursor-pointer border-none hidden md:block"
+                  >
+                    <ChevronLeft color="white" size={32} />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setGalleryIndex(prev => (prev + 1) % galleryImages.length); }}
+                    className="absolute right-[20px] md:right-[40px] z-10 p-[12px] bg-black/50 hover:bg-black/80 rounded-full transition-colors cursor-pointer border-none hidden md:block"
+                  >
+                    <ChevronRight color="white" size={32} />
+                  </button>
+                </>
+              )}
+              
+              <div 
+                className="w-full h-full flex items-center justify-center relative touch-pan-x"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <motion.img
+                  key={galleryIndex}
+                  src={galleryImages[galleryIndex]}
+                  alt="gallery detail"
+                  className="max-w-full max-h-full object-contain"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.2 }}
+                />
+              </div>
+            </div>
+
+            {/* 하단 썸네일 */}
+            {galleryImages.length > 1 && (
+              <div 
+                className="h-[100px] w-full bg-black/80 flex items-center px-[20px] gap-[10px] overflow-x-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center gap-[10px] md:hidden pr-[10px] border-r border-white/20 shrink-0">
+                  <button onClick={() => setGalleryIndex(prev => prev === 0 ? galleryImages.length - 1 : prev - 1)} className="p-[6px] bg-white/10 rounded-full cursor-pointer border-none">
+                    <ChevronLeft color="white" size={20}/>
+                  </button>
+                  <button onClick={() => setGalleryIndex(prev => (prev + 1) % galleryImages.length)} className="p-[6px] bg-white/10 rounded-full cursor-pointer border-none">
+                    <ChevronRight color="white" size={20}/>
+                  </button>
+                </div>
+                
+                {galleryImages.map((img, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => setGalleryIndex(idx)}
+                    className={`w-[60px] h-[60px] shrink-0 rounded-[6px] overflow-hidden cursor-pointer transition-all ${
+                      idx === galleryIndex ? "border-[2px] border-white scale-105" : "opacity-50 hover:opacity-100"
+                    }`}
+                  >
+                    <img src={img} alt={`thumb ${idx}`} className="w-full h-full object-cover" />
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {galleryImages.length === 1 && (
+               <div className="h-[60px]" /> /* padding for 1 image desktop */
+            )}
           </motion.div>
         )}
       </AnimatePresence>

@@ -64,46 +64,76 @@ function ImageUploadField({
   const [isDragging, setIsDragging] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
 
-  const handleFile = (file: File) => {
-    if (!file.type.startsWith("image/")) return;
-    // 이미지 크기 제한 (5MB) — localStorage 용량 고려
-    if (file.size > 5 * 1024 * 1024) {
-      alert("이미지 크기는 5MB 이하만 가능합니다.");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (e.target?.result) {
-        // 큰 이미지를 리사이즈하여 저장
-        const img = new Image();
-        img.onload = () => {
-          const maxW = 1200;
-          const maxH = 800;
-          let w = img.width;
-          let h = img.height;
-          if (w > maxW) { h = h * (maxW / w); w = maxW; }
-          if (h > maxH) { w = w * (maxH / h); h = maxH; }
-          const canvas = document.createElement("canvas");
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext("2d");
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, w, h);
-            const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
-            onChange(dataUrl);
-          }
-        };
-        img.src = e.target.result as string;
+  const parseImages = (val: string | undefined): string[] => {
+    if (!val) return [];
+    const tokens = val.split(',');
+    const result: string[] = [];
+    for (let i = 0; i < tokens.length; i++) {
+      let t = tokens[i].trim();
+      if (t.startsWith("data:") && i + 1 < tokens.length) {
+        result.push(t + ',' + tokens[i+1].trim());
+        i++;
+      } else if (t) {
+        result.push(t);
       }
-    };
-    reader.readAsDataURL(file);
+    }
+    return result;
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const images = parseImages(value);
+
+  const handleFile = (file: File): Promise<string | null> => {
+    return new Promise((resolve) => {
+      if (!file.type.startsWith("image/")) return resolve(null);
+      // 이미지 크기 제한 (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert("이미지 크기는 5MB 이하만 가능합니다.");
+        return resolve(null);
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          const img = new Image();
+          img.onload = () => {
+            const maxW = 1200;
+            const maxH = 800;
+            let w = img.width;
+            let h = img.height;
+            if (w > maxW) { h = h * (maxW / w); w = maxW; }
+            if (h > maxH) { w = w * (maxH / h); h = maxH; }
+            const canvas = document.createElement("canvas");
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+              ctx.drawImage(img, 0, 0, w, h);
+              resolve(canvas.toDataURL("image/jpeg", 0.8));
+            } else resolve(null);
+          };
+          img.src = e.target.result as string;
+        } else resolve(null);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const processFiles = async (files: File[]) => {
+    if (!files.length) return;
+    const newUrls: string[] = [];
+    for (const f of files) {
+      const url = await handleFile(f);
+      if (url) newUrls.push(url);
+    }
+    if (newUrls.length > 0) {
+      onChange([...images, ...newUrls].join(","));
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
+    const files = Array.from(e.dataTransfer.files);
+    processFiles(files);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -113,27 +143,35 @@ function ImageUploadField({
 
   const handleDragLeave = () => setIsDragging(false);
 
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleFile(file);
+  const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    processFiles(files);
     e.target.value = "";
+  };
+
+  const removeImage = (idxToRemove: number) => {
+    onChange(images.filter((_, idx) => idx !== idxToRemove).join(","));
   };
 
   return (
     <div>
-      <Label>이미지</Label>
+      <Label>이미지 ({images.length}장)</Label>
       {/* 미리보기 + 삭제 */}
-      {value && (
-        <div className="relative mb-[8px] inline-block">
-          <div className="w-[160px] h-[100px] rounded-[6px] overflow-hidden bg-[#f5f5f3]">
-            <img src={value} alt="" className="w-full h-full object-cover" />
-          </div>
-          <button
-            onClick={() => onChange("")}
-            className="absolute -top-[6px] -right-[6px] w-[20px] h-[20px] bg-black/70 text-white rounded-full flex items-center justify-center cursor-pointer border-none hover:bg-black transition-colors"
-          >
-            <X size={12} />
-          </button>
+      {images.length > 0 && (
+        <div className="flex flex-wrap gap-[10px] mb-[12px]">
+          {images.map((img, idx) => (
+            <div key={idx} className="relative inline-block shrink-0">
+              <div className="w-[100px] h-[70px] rounded-[6px] overflow-hidden bg-[#f5f5f3]">
+                <img src={img} alt="" className="w-full h-full object-cover" />
+              </div>
+              <button
+                onClick={() => removeImage(idx)}
+                className="absolute -top-[6px] -right-[6px] w-[20px] h-[20px] bg-black/70 text-white rounded-full flex items-center justify-center cursor-pointer border-none hover:bg-black transition-colors z-10"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          ))}
         </div>
       )}
 
@@ -152,6 +190,7 @@ function ImageUploadField({
         <input
           id={"img-upload-" + uid}
           type="file"
+          multiple
           accept="image/jpeg,image/png,image/gif,image/webp"
           onChange={handleFileInput}
           className="hidden"
@@ -192,9 +231,13 @@ function ImageUploadField({
         </button>
         {showUrlInput && (
           <input
-            value={value.startsWith("data:") ? "" : value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder="https://..."
+            value={images.filter((x) => !x.startsWith("data:")).join(",")}
+            onChange={(e) => {
+              const dataUrls = images.filter((x) => x.startsWith("data:"));
+              const newUrls = e.target.value.split(",").map((s) => s.trim()).filter(Boolean);
+              onChange([...dataUrls, ...newUrls].join(","));
+            }}
+            placeholder="외부 주소를 쉼표(,)로 구분"
             className={inputCls + " mt-[6px]"}
           />
         )}
@@ -547,9 +590,35 @@ export default function ProjectAdminPage() {
                           </div>
 
                           {/* 썸네일 */}
-                          <div className="w-[48px] h-[48px] md:w-[56px] md:h-[56px] rounded-[6px] overflow-hidden bg-[#f5f5f3] shrink-0">
+                          <div className="w-[48px] h-[48px] md:w-[56px] md:h-[56px] rounded-[6px] overflow-hidden bg-[#f5f5f3] shrink-0 relative">
                             {project.image ? (
-                              <img src={project.image} alt="" className="w-full h-full object-cover" />
+                              (() => {
+                                const parsed = (() => {
+                                  if (!project.image) return [];
+                                  const tokens = project.image.split(',');
+                                  const result: string[] = [];
+                                  for (let i = 0; i < tokens.length; i++) {
+                                    let t = tokens[i].trim();
+                                    if (t.startsWith("data:") && i + 1 < tokens.length) {
+                                      result.push(t + ',' + tokens[i+1].trim());
+                                      i++;
+                                    } else if (t) {
+                                      result.push(t);
+                                    }
+                                  }
+                                  return result;
+                                })();
+                                return (
+                                  <>
+                                    <img src={parsed[0]} alt="" className="w-full h-full object-cover" />
+                                    {parsed.length > 1 && (
+                                      <div className="absolute bottom-0 right-0 bg-black/60 text-white text-[9px] px-[4px] py-[1px] rounded-tl-[4px]">
+                                        +{parsed.length - 1}
+                                      </div>
+                                    )}
+                                  </>
+                                );
+                              })()
                             ) : (
                               <div className="flex items-center justify-center w-full h-full text-[#ccc]">
                                 <ImageIcon size={20} />
