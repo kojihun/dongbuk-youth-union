@@ -1,6 +1,26 @@
 import { createBrowserRouter } from "react-router";
 import Home from "./components/Home";
 
+// 동적 모듈 로드 실패 (새 배포 후 해시 불일치 등) 시 페이지를 새로고침하는 래퍼 함수
+const lazyWithRetry = <T,>(componentImport: () => Promise<T>): Promise<T> => {
+  return new Promise<T>((resolve, reject) => {
+    const hasRetried = window.sessionStorage.getItem("chunk-retry");
+    componentImport()
+      .then((component) => {
+        window.sessionStorage.removeItem("chunk-retry");
+        resolve(component);
+      })
+      .catch((error) => {
+        if (!hasRetried) {
+          window.sessionStorage.setItem("chunk-retry", "true");
+          window.location.reload();
+        } else {
+          reject(error);
+        }
+      });
+  });
+};
+
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -9,70 +29,70 @@ export const router = createBrowserRouter([
   {
     path: "/projects",
     lazy: () =>
-      import("./components/ProjectsPage").then((m) => ({
+      lazyWithRetry(() => import("./components/ProjectsPage")).then((m) => ({
         Component: m.default,
       })),
   },
   {
     path: "/churches",
     lazy: () =>
-      import("./components/ChurchesPage").then((m) => ({
+      lazyWithRetry(() => import("./components/ChurchesPage")).then((m) => ({
         Component: m.default,
       })),
   },
   {
     path: "/contact",
     lazy: () =>
-      import("./components/ContactPage").then((m) => ({
+      lazyWithRetry(() => import("./components/ContactPage")).then((m) => ({
         Component: m.default,
       })),
   },
   {
     path: "/admin",
     lazy: () =>
-      import("./components/AdminPage").then((m) => ({
+      lazyWithRetry(() => import("./components/AdminPage")).then((m) => ({
         Component: m.default,
       })),
   },
   {
     path: "/admin/churches",
     lazy: () =>
-      import("./components/ChurchAdminPage").then((m) => ({
+      lazyWithRetry(() => import("./components/ChurchAdminPage")).then((m) => ({
         Component: m.default,
       })),
   },
   {
     path: "/admin/verse",
     lazy: () =>
-      import("./components/VerseAdminPage").then((m) => ({
+      lazyWithRetry(() => import("./components/VerseAdminPage")).then((m) => ({
         Component: m.default,
       })),
   },
   {
     path: "/admin/home",
     lazy: () =>
-      import("./components/HomeAdminPage").then((m) => ({
+      lazyWithRetry(() => import("./components/HomeAdminPage")).then((m) => ({
         Component: m.default,
       })),
   },
   {
     path: "/admin/projects",
     lazy: () =>
-      import("./components/ProjectAdminPage").then((m) => ({
+      lazyWithRetry(() => import("./components/ProjectAdminPage")).then((m) => ({
         Component: m.default,
       })),
   },
   {
     path: "/admin/contact",
     lazy: () =>
-      import("./components/ContactAdminPage").then((m) => ({
+      lazyWithRetry(() => import("./components/ContactAdminPage")).then((m) => ({
         Component: m.default,
       })),
   },
   {
     path: "/ci",
     lazy: () =>
-      import("./components/CiManualPage").then((m) => ({
+      lazyWithRetry(() => import("./components/CiManualPage")).then((m) => ({
         Component: m.default,
       })),
   },
