@@ -1058,7 +1058,7 @@ export default function Desktop() {
       <AnimatePresence>
         {activePopups.length > 0 && (
           <motion.div
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50"
+            className="fixed inset-0 z-50 flex items-center justify-center p-[20px] bg-black/50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -1066,85 +1066,85 @@ export default function Desktop() {
             onClick={() => activePopups.forEach((p) => dismissPopup(p.id))}
           >
             <motion.div
-              className="bg-white w-full sm:w-auto sm:max-w-[480px] sm:rounded-[16px] rounded-t-[16px] shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
-              initial={{ opacity: 0, y: 80 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 80 }}
+              className="bg-white flex flex-col w-full max-w-[480px] rounded-[16px] shadow-2xl overflow-hidden max-h-[85vh] md:max-h-[90vh]"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
               onClick={(e) => e.stopPropagation()}
             >
-              {/* 모바일 핸들 */}
-              <div className="w-[36px] h-[4px] bg-[#ddd] rounded-full mx-auto mt-[10px] sm:hidden" />
+              {/* 스크롤되는 본문 영역 */}
+              <div className="flex-1 overflow-y-auto">
+                {activePopups.map((popup, idx) => (
+                  <div
+                    key={popup.id}
+                    className={`relative ${idx > 0 ? "border-t border-[#eee]" : ""}`}
+                  >
+                    {/* 닫기 버튼 (최상단) */}
+                    {idx === 0 && (
+                      <button
+                        onClick={dismissAll}
+                        className="absolute top-[12px] right-[12px] z-10 w-[28px] h-[28px] flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors cursor-pointer border-none"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
 
-              {activePopups.map((popup, idx) => (
-                <div
-                  key={popup.id}
-                  className={`relative ${idx > 0 ? "border-t border-[#eee]" : ""}`}
-                >
-                  {/* 닫기 버튼 (첫 번째 팝업에만) */}
-                  {idx === 0 && (
-                    <button
-                      onClick={dismissAll}
-                      className="absolute top-[12px] right-[12px] z-10 w-[28px] h-[28px] flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors cursor-pointer border-none"
-                    >
-                      <X size={14} />
-                    </button>
-                  )}
+                    {/* 이미지 */}
+                    {popup.image && (
+                      <div className="w-full">
+                        <img
+                          src={popup.image}
+                          alt={popup.title || "홍보"}
+                          className="w-full h-auto block"
+                        />
+                      </div>
+                    )}
 
-                  {/* 이미지 */}
-                  {popup.image && (
-                    <div className="w-full">
-                      <img
-                        src={popup.image}
-                        alt={popup.title || "홍보"}
-                        className="w-full h-auto max-h-[360px] object-cover"
-                      />
-                    </div>
-                  )}
+                    {/* 텍스트 콘텐츠 */}
+                    {(popup.title || popup.description) && (
+                      <div className="px-[20px] md:px-[24px] py-[16px] md:py-[20px]">
+                        {popup.title && (
+                          <p
+                            className="font-['Noto_Sans_KR:Medium',sans-serif] font-medium text-[16px] md:text-[18px] text-black tracking-[-0.4px] leading-[1.4]"
+                            style={{ fontVariationSettings: "'wdth' 100" }}
+                          >
+                            {popup.title}
+                          </p>
+                        )}
+                        {popup.description && (
+                          <p
+                            className="font-['Noto_Sans_KR:Regular',sans-serif] font-normal text-[13px] md:text-[14px] text-[#767676] tracking-[-0.3px] leading-[1.7] mt-[8px]"
+                            style={{ fontVariationSettings: "'wdth' 100" }}
+                          >
+                            {popup.description.split("\n").map((line, li) => (
+                              <span key={li}>
+                                {li > 0 && <br />}
+                                {line}
+                              </span>
+                            ))}
+                          </p>
+                        )}
+                        {popup.linkUrl && (
+                          <a
+                            href={popup.linkUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-block mt-[14px] font-['Instrument_Sans:Medium',sans-serif] font-medium text-[13px] text-[#4a6741] tracking-[-0.3px] border border-[#4a6741]/30 rounded-full px-[18px] py-[8px] hover:bg-[#f0f5ef] transition-colors no-underline"
+                            style={{ fontVariationSettings: "'wdth' 100" }}
+                          >
+                            {popup.linkLabel || "자세히 보기"} →
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
 
-                  {/* 텍스트 콘텐츠 */}
-                  {(popup.title || popup.description) && (
-                    <div className="px-[24px] py-[20px]">
-                      {popup.title && (
-                        <p
-                          className="font-['Noto_Sans_KR:Medium',sans-serif] font-medium text-[16px] md:text-[18px] text-black tracking-[-0.4px] leading-[1.4]"
-                          style={{ fontVariationSettings: "'wdth' 100" }}
-                        >
-                          {popup.title}
-                        </p>
-                      )}
-                      {popup.description && (
-                        <p
-                          className="font-['Noto_Sans_KR:Regular',sans-serif] font-normal text-[13px] md:text-[14px] text-[#767676] tracking-[-0.3px] leading-[1.7] mt-[8px]"
-                          style={{ fontVariationSettings: "'wdth' 100" }}
-                        >
-                          {popup.description.split("\n").map((line, li) => (
-                            <span key={li}>
-                              {li > 0 && <br />}
-                              {line}
-                            </span>
-                          ))}
-                        </p>
-                      )}
-                      {popup.linkUrl && (
-                        <a
-                          href={popup.linkUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block mt-[14px] font-['Instrument_Sans:Medium',sans-serif] font-medium text-[13px] text-[#4a6741] tracking-[-0.3px] border border-[#4a6741]/30 rounded-full px-[18px] py-[8px] hover:bg-[#f0f5ef] transition-colors no-underline"
-                          style={{ fontVariationSettings: "'wdth' 100" }}
-                        >
-                          {popup.linkLabel || "자세히 보기"} →
-                        </a>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {/* 하단: 12시간 / 24시간 동안 열지 않기 + 닫기 */}
-              <div className="px-[24px] pb-[20px] pt-[4px] flex flex-col gap-[10px]">
-                <div className="flex items-center gap-[16px]">
+              {/* 하단: 12시간/24시간 동안 열지 않기 + 닫기 (고정) */}
+              <div className="shrink-0 bg-white border-t border-[#eee] px-[20px] pb-[16px] pt-[12px] flex flex-col gap-[12px]">
+                <div className="flex flex-wrap items-center gap-x-[16px] gap-y-[8px]">
                   <label className="flex items-center gap-[6px] cursor-pointer select-none">
                     <input
                       type="checkbox"
@@ -1153,7 +1153,7 @@ export default function Desktop() {
                       className="w-[16px] h-[16px] accent-[#4a6741] cursor-pointer"
                     />
                     <span
-                      className="font-['Noto_Sans_KR:Regular',sans-serif] font-normal text-[12px] text-[#999] tracking-[-0.3px]"
+                      className="font-['Noto_Sans_KR:Regular',sans-serif] font-normal text-[12px] md:text-[13px] text-[#999] tracking-[-0.3px]"
                       style={{ fontVariationSettings: "'wdth' 100" }}
                     >
                       12시간 동안 열지 않기
@@ -1167,7 +1167,7 @@ export default function Desktop() {
                       className="w-[16px] h-[16px] accent-[#4a6741] cursor-pointer"
                     />
                     <span
-                      className="font-['Noto_Sans_KR:Regular',sans-serif] font-normal text-[12px] text-[#999] tracking-[-0.3px]"
+                      className="font-['Noto_Sans_KR:Regular',sans-serif] font-normal text-[12px] md:text-[13px] text-[#999] tracking-[-0.3px]"
                       style={{ fontVariationSettings: "'wdth' 100" }}
                     >
                       24시간 동안 열지 않기
@@ -1176,7 +1176,7 @@ export default function Desktop() {
                 </div>
                 <button
                   onClick={dismissAll}
-                  className="w-full font-['Noto_Sans_KR:Regular',sans-serif] font-normal text-[13px] text-[#999] tracking-[-0.3px] py-[10px] rounded-[8px] border border-[#eee] hover:border-[#ccc] transition-colors cursor-pointer bg-white"
+                  className="w-full font-['Noto_Sans_KR:Medium',sans-serif] font-medium text-[13px] md:text-[14px] text-[#555] tracking-[-0.3px] py-[10px] md:py-[12px] rounded-[8px] bg-[#f5f5f5] hover:bg-[#eaeaea] transition-colors cursor-pointer border-none"
                 >
                   닫기
                 </button>
