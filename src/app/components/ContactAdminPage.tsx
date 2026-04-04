@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { getContacts, deleteContact, updateContact, type Submission } from "./contactStore";
@@ -7,27 +7,48 @@ const fv = { fontVariationSettings: "'wdth' 100" };
 
 export default function ContactAdminPage() {
   const navigate = useNavigate();
-  const [contacts, setContacts] = useState<Submission[]>(() => getContacts());
-  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
-  const [replyInputs, setReplyInputs] = useState<Record<number, string>>({});
+  const [contacts, setContacts] = useState<Submission[]>([]);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [replyInputs, setReplyInputs] = useState<Record<string, string>>({});
 
-  const handleReplyChange = (id: number, text: string) => {
+  useEffect(() => {
+    async function loadContacts() {
+      const data = await getContacts();
+      setContacts(data);
+    }
+
+    loadContacts();
+  }, []);
+
+  const handleReplyChange = (id: string, text: string) => {
     setReplyInputs((prev) => ({ ...prev, [id]: text }));
   };
 
-  const handleSaveReply = (id: number) => {
+  const handleSaveReply = async (id: string) => {
     const text = replyInputs[id];
     if (text !== undefined) {
-      updateContact(id, { reply: text });
-      setContacts(getContacts());
-      alert("답변이 저장되었습니다.");
+      const ok = await updateContact(id, { admin_reply: text });
+
+      if (ok) {
+        const refreshed = await getContacts();
+        setContacts(refreshed);
+        alert("답변이 저장되었습니다.");
+      } else {
+        alert("답변 저장 실패");
+      }
     }
   };
 
-  const removeContact = (id: number) => {
-    deleteContact(id);
-    setContacts(getContacts());
-    setDeleteConfirmId(null);
+  const removeContact = async (id: string) => {
+    const ok = await deleteContact(id);
+
+    if (ok) {
+      const refreshed = await getContacts();
+      setContacts(refreshed);
+      setDeleteConfirmId(null);
+    } else {
+      alert("삭제 실패");
+    }
   };
 
   return (
@@ -59,7 +80,7 @@ export default function ContactAdminPage() {
       </div>
 
       <div className="max-w-[1035px] mx-auto px-[15px] md:px-[24px] py-[24px] md:py-[36px] flex flex-col gap-[16px] md:gap-[20px]">
-        
+
         <div className="bg-white rounded-[12px] border border-[#eee] overflow-hidden">
           <div className="px-[16px] md:px-[24px] py-[12px] md:py-[14px] border-b border-[#f0f0f0] flex items-center gap-[10px]">
             <p
@@ -81,7 +102,7 @@ export default function ContactAdminPage() {
                       className="font-['Noto_Sans_KR:Medium',sans-serif] text-[15px] text-black tracking-[-0.3px]"
                       style={fv}
                     >
-                      {contact.name || "익명"}
+                      {contact.nickname || "익명"}
                     </span>
                     <span
                       className="font-['Noto_Sans_KR:Regular',sans-serif] text-[13px] text-[#767676] tracking-[-0.3px]"
@@ -96,26 +117,26 @@ export default function ContactAdminPage() {
                       className="font-['Instrument_Sans:Regular',sans-serif] text-[12px] text-[#bbb] tracking-[-0.3px]"
                       style={fv}
                     >
-                      {contact.date}
+                      {new Date(contact.created_at).toLocaleDateString()}
                     </span>
                   </div>
                   <p
                     className="font-['Noto_Sans_KR:Regular',sans-serif] text-[14px] text-[#333] tracking-[-0.3px] leading-[1.6] whitespace-pre-wrap bg-[#f9f9f9] p-[12px] rounded-[8px]"
                     style={fv}
                   >
-                    {contact.message}
+                    {contact.content}
                   </p>
 
                   <div className="mt-[8px] flex flex-col gap-[6px]">
-                    <textarea 
-                      value={replyInputs[contact.id] ?? contact.reply ?? ""}
+                    <textarea
+                      value={replyInputs[contact.id] ?? contact.admin_reply ?? ""}
                       onChange={(e) => handleReplyChange(contact.id, e.target.value)}
                       placeholder="운영진 답변을 작성해주세요..."
                       className="border border-[#ddd] rounded-[6px] p-[10px] font-['Noto_Sans_KR:Regular',sans-serif] text-[13px] text-[#4a6741] transition-colors focus:border-[#4a6741] outline-none min-h-[60px] resize-none bg-white"
                       style={fv}
                     />
                     <div className="flex justify-end">
-                      <button 
+                      <button
                         onClick={() => handleSaveReply(contact.id)}
                         className="font-['Noto_Sans_KR:Medium',sans-serif] text-[12px] text-white tracking-[-0.3px] px-[14px] py-[8px] rounded-[6px] bg-[#4a6741] hover:bg-[#3d5636] transition-colors cursor-pointer border-none"
                         style={fv}

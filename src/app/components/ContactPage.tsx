@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { ArrowLeft, Send, CheckCircle, Lock, Eye, EyeOff, X, Settings } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getBrandImages } from "./brandStore";
 import { getContacts, addContact, type Submission } from "./contactStore";
 import { verifyPassword } from "./passwordStore";
@@ -28,15 +28,24 @@ export default function ContactPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const navigate = useNavigate();
-  const [submissions, setSubmissions] = useState<Submission[]>(getContacts());
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+
+  useEffect(() => {
+    async function loadSubmissions() {
+      const data = await getContacts();
+      setSubmissions(data);
+    }
+
+    loadSubmissions();
+  }, []);
 
   // Password modal state
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [modalPassword, setModalPassword] = useState("");
   const [showModalPassword, setShowModalPassword] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
-  const [unlockedIds, setUnlockedIds] = useState<Set<number>>(new Set());
+  const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
 
   // Admin routing state
   const [showAdminPasswordModal, setShowAdminPasswordModal] = useState(false);
@@ -63,32 +72,31 @@ export default function ContactPage() {
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const hashedPassword = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-    const newSubmission: Submission = {
-      id: Date.now(),
-      name: name || "익명",
+    const ok = await addContact({
+      nickname: name || "익명",
       church: church || "미지정",
       category: category || "기타",
-      message,
+      content: message,
       password: hashedPassword,
-      date: new Date().toLocaleDateString("ko-KR", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      }),
-    };
+    });
 
-    addContact(newSubmission);
-    setSubmissions(getContacts());
-    setName("");
-    setChurch("");
-    setCategory("");
-    setMessage("");
-    setPassword("");
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 3000);
+    if (ok) {
+      const refreshed = await getContacts();
+      setSubmissions(refreshed);
+      setName("");
+      setChurch("");
+      setCategory("");
+      setMessage("");
+      setPassword("");
+      setSubmitted(true);
+      setTimeout(() => setSubmitted(false), 3000);
+    } else {
+      alert("의견 등록 실패");
+    }
+
   };
 
-  const handleCardClick = (id: number) => {
+  const handleCardClick = (id: string) => {
     if (unlockedIds.has(id)) return;
     setSelectedId(id);
     setModalPassword("");
@@ -246,11 +254,10 @@ export default function ContactPage() {
                   key={cat}
                   type="button"
                   onClick={() => setCategory(category === cat ? "" : cat)}
-                  className={`px-[14px] py-[7px] rounded-full border text-[12px] tracking-[-0.3px] transition-all font-['Noto_Sans_KR:Regular',sans-serif] cursor-pointer ${
-                    category === cat
-                      ? "border-black bg-black text-white"
-                      : "border-[#ddd] bg-white text-[#767676] hover:border-[#999]"
-                  }`}
+                  className={`px-[14px] py-[7px] rounded-full border text-[12px] tracking-[-0.3px] transition-all font-['Noto_Sans_KR:Regular',sans-serif] cursor-pointer ${category === cat
+                    ? "border-black bg-black text-white"
+                    : "border-[#ddd] bg-white text-[#767676] hover:border-[#999]"
+                    }`}
                   style={{ fontVariationSettings: "'wdth' 100" }}
                 >
                   {cat}
@@ -311,11 +318,10 @@ export default function ContactPage() {
             <button
               type="submit"
               disabled={!message.trim() || !password.trim()}
-              className={`flex items-center gap-[8px] px-[24px] py-[11px] rounded-full text-[13px] tracking-[-0.3px] transition-all font-['Noto_Sans_KR:Regular',sans-serif] cursor-pointer ${
-                message.trim() && password.trim()
-                  ? "bg-black text-white hover:bg-[#333]"
-                  : "bg-[#eee] text-[#bbb] cursor-not-allowed"
-              }`}
+              className={`flex items-center gap-[8px] px-[24px] py-[11px] rounded-full text-[13px] tracking-[-0.3px] transition-all font-['Noto_Sans_KR:Regular',sans-serif] cursor-pointer ${message.trim() && password.trim()
+                ? "bg-black text-white hover:bg-[#333]"
+                : "bg-[#eee] text-[#bbb] cursor-not-allowed"
+                }`}
               style={{ fontVariationSettings: "'wdth' 100" }}
             >
               <Send size={14} />
@@ -352,29 +358,29 @@ export default function ContactPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-[8px]">
                       <span className="font-['Noto_Sans_KR:Medium',sans-serif] text-[14px] text-black tracking-[-0.3px]">
-                        {item.name}
+                        {item.nickname || "익명"}
                       </span>
                       <span className="px-[8px] py-[2px] bg-[#eee] rounded-full text-[10px] text-[#767676] tracking-[-0.3px] font-['Noto_Sans_KR:Regular',sans-serif]">
                         {item.category}
                       </span>
                     </div>
                     <span className="font-['Instrument_Sans:Regular',sans-serif] text-[11px] text-[#bbb] tracking-[-0.3px]">
-                      {item.date}
+                      {new Date(item.created_at).toLocaleDateString()}
                     </span>
                   </div>
-                  
+
                   {isUnlocked ? (
                     <div className="flex flex-col gap-[12px] mt-[4px]">
                       <div className="p-[12px] bg-white rounded-[6px] border border-[#eee]">
                         <p className="font-['Noto_Sans_KR:Regular',sans-serif] text-[13px] text-[#444] whitespace-pre-wrap leading-[1.6]">
-                          {item.message}
+                          {item.content}
                         </p>
                       </div>
-                      {item.reply ? (
+                      {item.admin_reply ? (
                         <div className="p-[12px] bg-[#f0f5ef] border border-[#d6e5d1] rounded-[6px] flex flex-col gap-[6px]">
                           <span className="font-['Noto_Sans_KR:Medium',sans-serif] text-[12px] text-[#4a6741]">운영진 답변</span>
                           <p className="font-['Noto_Sans_KR:Regular',sans-serif] text-[13px] text-[#4a6741] whitespace-pre-wrap leading-[1.6]">
-                            {item.reply}
+                            {item.admin_reply}
                           </p>
                         </div>
                       ) : (
