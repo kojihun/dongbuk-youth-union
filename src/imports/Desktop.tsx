@@ -12,12 +12,27 @@ import { useState } from "react";
 import { Settings, X } from "lucide-react";
 import svgPaths from "./svg-m4b78paeab";
 
-/** 프로젝트 스토어에서 최신순 이미지를 가져오는 헬퍼 */
+/** 프로젝트 스토어에서 각 연도별 대표사진(첫 번째 이미지)을 가져오는 헬퍼 */
 function getSlideImages(): string[] {
   const projects = getProjects();
   const images = projects
-    .filter((p) => p.visible && p.image)
-    .map((p) => p.image);
+    .filter((p) => p.visible && p.image && p.image.trim())
+    .map((p) => {
+      // image 필드는 쉼표로 구분된 복수 URL일 수 있음, data URI는 쉼표를 포함함
+      const tokens = p.image.split(',');
+      const result: string[] = [];
+      for (let i = 0; i < tokens.length; i++) {
+        let t = tokens[i].trim();
+        if (t.startsWith("data:") && i + 1 < tokens.length) {
+          result.push(t + ',' + tokens[i+1].trim());
+          i++;
+        } else if (t) {
+          result.push(t);
+        }
+      }
+      return result.length > 0 ? result[0] : "";
+    })
+    .filter(Boolean);
   return images;
 }
 
@@ -390,6 +405,8 @@ function ImageStrip() {
               src={src}
               alt={`Our Ministry ${(i % slideImages.length) + 1}`}
               className="w-full h-full object-cover"
+              loading="lazy"
+              decoding="async"
             />
           </div>
         ))}

@@ -57,6 +57,8 @@ function ProjectCard({
           <img
             src={images[0]}
             alt={project.title}
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.05]"
           />
           {images.length > 1 && (
@@ -406,7 +408,7 @@ export default function ProjectsPage() {
                       idx === galleryIndex ? "border-[2px] border-white scale-105" : "opacity-50 hover:opacity-100"
                     }`}
                   >
-                    <img src={img} alt={`thumb ${idx}`} className="w-full h-full object-cover" />
+                    <img src={img} alt={`thumb ${idx}`} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                   </div>
                 ))}
               </div>

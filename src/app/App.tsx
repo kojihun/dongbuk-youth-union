@@ -8,7 +8,14 @@ function AppLoader() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    initDataFromServer().then(() => setReady(true));
+    // 이미 로컬 저장소에 데이터가 있는지 확인해서 빠른 진입 허용
+    const hasCache = !!localStorage.getItem("admin_projects");
+    if (hasCache) {
+      setReady(true);
+      initDataFromServer(); // 백그라운드 갱신
+    } else {
+      initDataFromServer().then(() => setReady(true));
+    }
   }, []);
 
   if (!ready) {
