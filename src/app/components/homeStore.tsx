@@ -87,7 +87,7 @@ export function getHomeData(): HomeData {
       if (!parsed.navLinks) parsed.navLinks = DEFAULT_NAV_LINKS;
       if (!parsed.intro) parsed.intro = DEFAULT_INTRO;
 
-      // 마이그레이션: "Contact" 링크를 내부 /contact 로 변경 및 기타 원복
+      // 마이그레이션: "Contact" 링크를 내부 /contact 로 변경 및 "함께하는 업체" 추가
       if (parsed.navLinks) {
         let migrated = false;
         parsed.navLinks = parsed.navLinks.map((link: NavLinkItem) => {
@@ -100,8 +100,34 @@ export function getHomeData(): HomeData {
             link.url = "/contact";
             link.isExternal = false;
           }
+          if (link.url === "/partners") {
+            if (link.label !== "Community Businesses") {
+              migrated = true;
+              link.label = "Community Businesses";
+            }
+          }
           return link;
         });
+
+        // "함께하는 업체"가 없으면 추가
+        if (!parsed.navLinks.some((l: NavLinkItem) => l.url === "/partners")) {
+          migrated = true;
+          const insertIdx = parsed.navLinks.findIndex((l: NavLinkItem) => l.url.includes("instagram"));
+          const partnerLink: NavLinkItem = {
+            id: generateNavId(),
+            label: "Community Businesses",
+            url: "/partners",
+            isExternal: false,
+            visible: true,
+          };
+
+          if (insertIdx !== -1) {
+            parsed.navLinks.splice(insertIdx, 0, partnerLink);
+          } else {
+            parsed.navLinks.push(partnerLink);
+          }
+        }
+
         if (migrated) {
           // 백그라운드에서 변경된 데이터를 다시 저장
           setTimeout(() => saveHomeData(parsed), 0);

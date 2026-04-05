@@ -70,6 +70,7 @@ function LogoContain() {
 
   const hoverMapping: Record<string, string> = {
     "Affiliated Church": "소속교회",
+    "Community Businesses": "함께하는 업체",
     "Contact": "문의",
     "Instagram": "인스타그램",
     "Band": "밴드"

@@ -90,6 +90,20 @@ export const router = createBrowserRouter([
       })),
   },
   {
+    path: "/partners",
+    lazy: () =>
+      lazyWithRetry(() => import("./components/PartnerBusinessesPage")).then((m) => ({
+        Component: m.default,
+      })),
+  },
+  {
+    path: "/admin/partners",
+    lazy: () =>
+      lazyWithRetry(() => import("./components/PartnerAdminPage")).then((m) => ({
+        Component: m.default,
+      })),
+  },
+  {
     path: "/ci",
     lazy: () =>
       lazyWithRetry(() => import("./components/CiManualPage")).then((m) => ({
