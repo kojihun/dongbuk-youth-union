@@ -27,7 +27,7 @@ export default function PartnerBusinessesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("전체");
   const [selectedRegion, setSelectedRegion] = useState("전체");
-  const [viewMode, setViewMode] = useState<'grid'|'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid'|'list'>('list');
 
   const partners = getPartners().filter(p => p.visible);
 
