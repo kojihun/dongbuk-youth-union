@@ -1,4 +1,5 @@
 import { getProjects } from "../app/components/projectStore";
+import { getActivities } from "../app/components/activityStore";
 import { getHomeData } from "../app/components/homeStore";
 import { getDonationAccount } from "../app/components/donationStore";
 import { getBrandImages } from "../app/components/brandStore";
@@ -12,28 +13,44 @@ import { useState } from "react";
 import { Settings, X } from "lucide-react";
 import svgPaths from "./svg-m4b78paeab";
 
-/** 프로젝트 스토어에서 각 연도별 대표사진(첫 번째 이미지)을 가져오는 헬퍼 */
-function getSlideImages(): string[] {
-  const projects = getProjects();
-  const images = projects
-    .filter((p) => p.visible && p.image && p.image.trim())
-    .map((p) => {
-      // image 필드는 쉼표로 구분된 복수 URL일 수 있음, data URI는 쉼표를 포함함
-      const tokens = p.image.split(',');
-      const result: string[] = [];
-      for (let i = 0; i < tokens.length; i++) {
-        let t = tokens[i].trim();
-        if (t.startsWith("data:") && i + 1 < tokens.length) {
-          result.push(t + ',' + tokens[i+1].trim());
-          i++;
-        } else if (t) {
-          result.push(t);
-        }
-      }
-      return result.length > 0 ? result[0] : "";
-    })
-    .filter(Boolean);
-  return images;
+/** 활동 게시판 + 프로젝트 스토어에서 슬라이드용 { src, link } 배열을 가져오는 헬퍼 */
+function getSlideData(): { src: string; link: string }[] {
+  const result: { src: string; link: string }[] = [];
+
+  // 안전한 URL인지 확인 (새로고침 시 사라지는 blob 등 임시 URL 제외)
+  const isValidUrl = (url: string) => url && url.trim().length > 0 && !url.startsWith("blob:");
+
+  // 1. 활동 게시판 데이터 가져오기 및 최신순 정렬 (createdAt 내림차순)
+  const activities = getActivities()
+    .filter(a => a.visible && a.isMain !== false && a.photos && a.photos.length > 0 && isValidUrl(a.photos[0]))
+    .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+  // 2. 최신 게시글 10개의 첫 번째 사진 수집
+  const targetCount = 10;
+  const count = Math.min(targetCount, activities.length);
+  for (let i = 0; i < count; i++) {
+    result.push({ 
+      src: activities[i].photos[0], 
+      link: `/activity/${activities[i].id}` 
+    });
+  }
+
+  // 3. 만약 10장이 안 된다면, 부족한 만큼 기독교적 이미지로 채우기
+  const defaultPhotos = [
+    "https://images.unsplash.com/photo-1504052434569-70ad5836ab65?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80", // 확실하게 동작하는 성경 이미지
+    "https://images.unsplash.com/photo-1438232992991-995b7058bbb3?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80"  // 확실하게 동작하는 십자가 이미지
+  ];
+
+  let defaultIdx = 0;
+  while (result.length < targetCount) {
+    result.push({
+      src: defaultPhotos[defaultIdx % defaultPhotos.length],
+      link: '/activity'
+    });
+    defaultIdx++;
+  }
+
+  return result;
 }
 
 function LeftLogo() {
@@ -66,35 +83,39 @@ function LogoContain() {
   const { navLinks } = getHomeData();
   const visibleLinks = navLinks.filter((l) => l.visible);
   const linkCls =
-    "group relative flex items-center justify-center font-['Instrument_Sans:Regular',sans-serif] font-normal text-[10px] md:text-[11px] lg:text-[13px] text-[#999] tracking-[-0.4px] hover:text-black transition-colors no-underline whitespace-nowrap";
+    "group relative flex items-center justify-center font-['Instrument_Sans:Regular',sans-serif] font-normal text-[9px] md:text-[10px] lg:text-[11px] text-[#999] tracking-[-0.4px] hover:text-black transition-colors no-underline whitespace-nowrap";
 
   const hoverMapping: Record<string, string> = {
     "Affiliated Church": "소속교회",
     "Community Businesses": "함께하는 업체",
     "Contact": "문의",
     "Instagram": "인스타그램",
-    "Band": "밴드"
+    "Band": "밴드",
+    "Activity Board": "활동 게시판",
+    "Activity History": "활동 연혁",
   };
 
   return (
     <div
-      className="flex flex-col md:flex-row gap-[6px] md:gap-[8px] items-start relative w-full overflow-visible"
+      className="flex flex-col md:flex-row gap-[12px] md:gap-[8px] items-center md:items-start relative w-full"
       data-name="Logo contain"
     >
-      <div className="flex gap-[8px] items-start">
+      <div className="flex justify-between w-full md:w-auto items-start">
+        <div className="flex gap-[8px] items-start max-w-[220px] md:max-w-[260px] shrink-0">
         <LeftLogo />
         <div
           className="flex flex-col font-['Instrument_Sans:Regular','Noto_Sans_KR:Regular',sans-serif] font-normal justify-end leading-[0] relative text-[#767676] text-[10px] md:text-[11px] tracking-[-0.33px] h-[100px] md:h-[126px]"
           style={{ fontVariationSettings: "'wdth' 100" }}
         >
-          <p className="leading-[1.4] whitespace-nowrap">
+          <p className="leading-[1.4] whitespace-nowrap text-[9px] md:text-[10px]">
             동북시찰청년연합회 대한예수교장로회(통합)
           </p>
         </div>
       </div>
-      <div className="flex-1" />
-      <div className="flex items-end md:h-[126px] pr-[0px] md:pr-[12px] lg:pr-[16px] self-end">
-        <nav className="flex items-center gap-[12px] md:gap-[28px] lg:gap-[36px] pb-[1px]">
+      </div>
+      <div className="flex-1 hidden md:block" />
+      <div className="min-w-0 flex flex-col md:flex-row items-center md:items-end justify-center md:h-[126px] self-stretch md:self-end w-full md:w-auto">
+        <nav className="flex flex-wrap md:flex-nowrap items-center justify-center gap-x-[12px] md:gap-x-[18px] lg:gap-x-[24px] gap-y-[8px] pb-[1px] w-full max-w-[360px] md:max-w-none">
           {visibleLinks.map((link) => {
             const koLabel = hoverMapping[link.label] || link.label;
             const content = (
@@ -103,6 +124,12 @@ function LogoContain() {
                 <span className="col-start-1 row-start-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 font-['Noto_Sans_KR:Regular',sans-serif] text-[#999] whitespace-nowrap">{koLabel}</span>
               </div>
             );
+            
+            // 상단 네비게이션바에서 Instagram/Band 완전 제거
+            if (link.label === "Instagram" || link.label === "Band") {
+              return null;
+            }
+
             return link.isExternal ? (
               <a
                 key={link.id}
@@ -125,14 +152,6 @@ function LogoContain() {
               </Link>
             );
           })}
-          <Link
-            to="/ci"
-            className={linkCls}
-            style={{ fontVariationSettings: "'wdth' 100" }}
-            title="CI 매뉴얼"
-          >
-            *
-          </Link>
         </nav>
       </div>
     </div>
@@ -153,7 +172,7 @@ function NavContain() {
 function NavSection() {
   return (
     <div
-      className="bg-white flex flex-col items-start pt-[15px] px-[15px] md:px-[24px] relative w-full max-w-[1055px]"
+      className="bg-white flex flex-col items-start pt-[15px] px-[15px] md:px-[24px] relative w-full max-w-[1033px]"
       data-name="Nav section"
     >
       <NavContain />
@@ -350,35 +369,45 @@ function OurWorkContent1() {
         className="col-start-1 row-start-1 group-hover:opacity-0 transition-opacity duration-300 font-['Instrument_Sans:Regular',sans-serif] font-normal leading-none text-[20px] md:text-[24px] text-black tracking-[-1.2px] whitespace-nowrap m-0"
         style={{ fontVariationSettings: "'wdth' 100" }}
       >
-        Our Ministry
+        Community Stories
       </p>
       <p
         className="col-start-1 row-start-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 font-['Noto_Sans_KR:Medium',sans-serif] leading-none text-[20px] md:text-[24px] text-black tracking-[-1.2px] whitespace-nowrap m-0"
         style={{ fontVariationSettings: "'wdth' 100" }}
       >
-        사역 소개
+        공동체 이야기
       </p>
     </motion.div>
   );
 }
 
 function ImageStrip() {
-  const slideImages = getSlideImages();
+  const slideData = getSlideData();
 
-  if (slideImages.length === 0) {
+  if (slideData.length === 0) {
     return (
       <div className="w-full overflow-hidden" data-name="Image strip">
-        <div className="flex items-center justify-center py-[40px] md:py-[60px]">
+        <div className="flex items-center justify-center py-[50px] md:py-[70px] border border-dashed border-[#ddd] rounded-[8px]">
           <p
             className="font-['Noto_Sans_KR:Regular',sans-serif] font-normal text-[13px] md:text-[14px] text-[#bbb] tracking-[-0.3px]"
             style={{ fontVariationSettings: "'wdth' 100" }}
           >
-            관리자 페이지에서 활동 이미지를 등록해주세요
+            관리자 페이지에서 소모임 활동 이미지를 등록해주세요
           </p>
         </div>
       </div>
     );
   }
+
+  // 이미지가 충분하지 않으면 복제해서 슬라이드가 끊기지 않도록
+  const minCount = 8;
+  const repeated = slideData.length < minCount
+    ? Array.from({ length: Math.ceil(minCount / slideData.length) }).flatMap(() => slideData)
+    : slideData;
+  const stripData = [...repeated, ...repeated];
+
+  // 슬라이드 속도: 기존 6초에서 12초로 더 느리게 감속
+  const duration = repeated.length * 12;
 
   return (
     <div
@@ -386,73 +415,45 @@ function ImageStrip() {
       data-name="Image strip"
     >
       <motion.div
-        className="flex gap-[16px]"
+        className="flex gap-[12px] md:gap-[16px] w-max"
         animate={{ x: ["0%", "-50%"] }}
         transition={{
           x: {
-            duration: 20,
+            duration,
             repeat: Infinity,
-            repeatType: "reverse",
+            repeatType: "loop",
             ease: "linear",
           },
         }}
       >
-        {[...slideImages, ...slideImages].map((src, i) => (
-          <div
+        {stripData.map((item, i) => (
+          <Link
             key={i}
-            className="shrink-0 w-[260px] h-[180px] md:w-[340px] md:h-[230px] lg:w-[420px] lg:h-[280px] rounded-[6px] overflow-hidden"
+            to={item.link}
+            className="shrink-0 w-[220px] h-[155px] md:w-[300px] md:h-[210px] lg:w-[360px] lg:h-[250px] rounded-[8px] overflow-hidden block"
+            style={{ textDecoration: 'none' }}
+            onClick={(e) => e.stopPropagation()}
           >
             <img
-              src={src}
-              alt={`Our Ministry ${(i % slideImages.length) + 1}`}
-              className="w-full h-full object-cover"
-              loading="lazy"
+              src={item.src}
+              alt={`활동 사진 ${(i % repeated.length) + 1}`}
+              className="w-full h-full object-cover transition-transform duration-700 hover:scale-[1.04]"
               decoding="async"
+              onError={(e) => {
+                // 사진 링크가 깨졌을 때 엑스박스 방지용 (절대 깨지지 않는 회색 빈 배경 + 텍스트 데이터 URI 대체)
+                const target = e.target as HTMLImageElement;
+                target.onerror = null; // 무한 반복 방지
+                target.src = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400' viewBox='0 0 600 400'%3E%3Crect width='600' height='400' fill='%23f0f0f0'/%3E%3Ctext x='300' y='200' font-family='sans-serif' font-size='24' fill='%23999999' text-anchor='middle' dominant-baseline='middle'%3EImage Not Found%3C/text%3E%3C/svg%3E";
+              }}
             />
-          </div>
+          </Link>
         ))}
       </motion.div>
     </div>
   );
 }
 
-function TextLink4() {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
-      viewport={{ once: false, amount: 0.3 }}
-      transition={{ duration: 0.7, delay: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-    >
-      <Link
-        to="/projects"
-        className="group flex font-['Instrument_Sans:Medium',sans-serif] font-medium gap-[3px] items-center leading-[1.1] relative shrink-0 text-[#767676] text-[16px] md:text-[20px] tracking-[-0.6px] whitespace-nowrap transition-colors no-underline"
-        data-name="Text link"
-      >
-        <div className="grid place-items-center shrink-0">
-          <p
-            className="col-start-1 row-start-1 group-hover:opacity-0 transition-opacity duration-300 whitespace-nowrap"
-            style={{ fontVariationSettings: "'wdth' 100" }}
-          >
-            Explore
-          </p>
-          <p
-            className="col-start-1 row-start-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 font-['Noto_Sans_KR:Medium',sans-serif] text-[#767676] text-[15px] md:text-[18px] whitespace-nowrap"
-            style={{ fontVariationSettings: "'wdth' 100" }}
-          >
-            더 알아보기
-          </p>
-        </div>
-        <p
-          className="relative shrink-0"
-          style={{ fontVariationSettings: "'wdth' 100" }}
-        >
-          →
-        </p>
-      </Link>
-    </motion.div>
-  );
-}
+
 
 function NavHeader() {
   return (
@@ -462,7 +463,6 @@ function NavHeader() {
     >
       <div className="flex flex-col gap-[20px] md:gap-[24px] items-end max-w-[inherit] pb-[20px] md:pb-[30px] px-[15px] md:px-0 relative w-full">
         <ImageStrip />
-        <TextLink4 />
       </div>
     </div>
   );
@@ -725,6 +725,15 @@ function SocialLinks1() {
         <p className="col-start-1 row-start-1 group-hover:opacity-0 transition-opacity duration-300 leading-none m-0">Band</p>
         <p className="col-start-1 row-start-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 font-['Noto_Sans_KR:Regular',sans-serif] text-[#999] leading-none m-0">밴드</p>
       </div>
+      <Link
+        to="/ci"
+        className="group grid place-items-center md:place-items-start leading-[0] relative hover:text-black transition-colors no-underline cursor-pointer"
+        style={{ fontVariationSettings: "'wdth' 100" }}
+        title="CI 매뉴얼"
+      >
+        <p className="col-start-1 row-start-1 group-hover:opacity-0 transition-opacity duration-300 leading-none m-0 text-[#767676]">CI</p>
+        <p className="col-start-1 row-start-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 font-['Noto_Sans_KR:Regular',sans-serif] text-[#999] leading-none m-0">CI 매뉴얼</p>
+      </Link>
       <button
         onClick={() => setShowPasswordModal(true)}
         className="text-[#ccc] hover:text-[#999] active:text-[#999] transition-colors duration-300 p-[4px] cursor-pointer bg-transparent border-none mt-[2px]"

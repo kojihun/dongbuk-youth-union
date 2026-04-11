@@ -39,6 +39,27 @@ const DEFAULT_NAV_LINKS: NavLinkItem[] = [
     visible: true,
   },
   {
+    id: "nav-6",
+    label: "Activity History",
+    url: "/history",
+    isExternal: false,
+    visible: true,
+  },
+  {
+    id: "nav-5",
+    label: "Activity Board",
+    url: "/activity",
+    isExternal: false,
+    visible: true,
+  },
+  {
+    id: "nav-7",
+    label: "Community Businesses",
+    url: "/partners",
+    isExternal: false,
+    visible: true,
+  },
+  {
     id: "nav-2",
     label: "Contact",
     url: "/contact",
@@ -106,6 +127,11 @@ export function getHomeData(): HomeData {
               link.label = "Community Businesses";
             }
           }
+          // "활동 게시판" → "Activity Board" 마이그레이션
+          if (link.url === "/activity" && link.label === "활동 게시판") {
+            migrated = true;
+            link.label = "Activity Board";
+          }
           return link;
         });
 
@@ -127,6 +153,64 @@ export function getHomeData(): HomeData {
             parsed.navLinks.push(partnerLink);
           }
         }
+
+        // "Activity Board" 링크가 없으면 Community Businesses 바로 뒤에 추가
+        if (!parsed.navLinks.some((l: NavLinkItem) => l.url === "/activity")) {
+          migrated = true;
+          const partnerIdx = parsed.navLinks.findIndex((l: NavLinkItem) => l.url === "/partners");
+          const activityLink: NavLinkItem = {
+            id: generateNavId(),
+            label: "Activity Board",
+            url: "/activity",
+            isExternal: false,
+            visible: true,
+          };
+          if (partnerIdx !== -1) {
+            parsed.navLinks.splice(partnerIdx + 1, 0, activityLink);
+          } else {
+            parsed.navLinks.push(activityLink);
+          }
+        }
+
+        // "Activity History" 링크가 없으면 Activity Board 바로 뒤에 추가
+        if (!parsed.navLinks.some((l: NavLinkItem) => l.url === "/history")) {
+          migrated = true;
+          const activityBoardIdx = parsed.navLinks.findIndex((l: NavLinkItem) => l.url === "/activity");
+          const historyLink: NavLinkItem = {
+            id: generateNavId(),
+            label: "Activity History",
+            url: "/history",
+            isExternal: false,
+            visible: true,
+          };
+          if (activityBoardIdx !== -1) {
+            parsed.navLinks.splice(activityBoardIdx + 1, 0, historyLink);
+          } else {
+            parsed.navLinks.push(historyLink);
+          }
+        }
+
+        // 지정된 순서대로 정렬 마이그레이션
+        const targetOrder = [
+          "Affiliated Church",
+          "Activity History",
+          "Activity Board",
+          "Community Businesses",
+          "Contact",
+          "Instagram",
+          "Band"
+        ];
+        
+        parsed.navLinks.sort((a: NavLinkItem, b: NavLinkItem) => {
+          let aIdx = targetOrder.indexOf(a.label);
+          let bIdx = targetOrder.indexOf(b.label);
+          if (aIdx === -1) aIdx = 999;
+          if (bIdx === -1) bIdx = 999;
+          return aIdx - bIdx;
+        });
+
+        // 사용자가 순서를 강제로 바꿨더라도 한번은 순서를 맞춰주기 위한 플래그 (마이그레이션 저장용)
+        migrated = true;
 
         if (migrated) {
           // 백그라운드에서 변경된 데이터를 다시 저장

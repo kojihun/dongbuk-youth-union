@@ -34,6 +34,13 @@ export const router = createBrowserRouter([
       })),
   },
   {
+    path: "/history",
+    lazy: () =>
+      lazyWithRetry(() => import("./components/ProjectsPage")).then((m) => ({
+        Component: m.default,
+      })),
+  },
+  {
     path: "/churches",
     lazy: () =>
       lazyWithRetry(() => import("./components/ChurchesPage")).then((m) => ({
@@ -107,6 +114,27 @@ export const router = createBrowserRouter([
     path: "/ci",
     lazy: () =>
       lazyWithRetry(() => import("./components/CiManualPage")).then((m) => ({
+        Component: m.default,
+      })),
+  },
+  {
+    path: "/activity",
+    lazy: () =>
+      lazyWithRetry(() => import("./components/ActivityBoardPage")).then((m) => ({
+        Component: m.default,
+      })),
+  },
+  {
+    path: "/activity/:id",
+    lazy: () =>
+      lazyWithRetry(() => import("./components/ActivityBoardPage")).then((m) => ({
+        Component: m.default,
+      })),
+  },
+  {
+    path: "/admin/activity",
+    lazy: () =>
+      lazyWithRetry(() => import("./components/ActivityAdminPage")).then((m) => ({
         Component: m.default,
       })),
   },

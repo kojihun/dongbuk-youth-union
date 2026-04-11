@@ -313,31 +313,36 @@ export default function ContactPage() {
             </div>
           </div>
 
-          {/* Submit Button */}
-          <div className="flex items-center gap-[16px]">
-            <button
-              type="submit"
-              disabled={!message.trim() || !password.trim()}
-              className={`flex items-center gap-[8px] px-[24px] py-[11px] rounded-full text-[13px] tracking-[-0.3px] transition-all font-['Noto_Sans_KR:Regular',sans-serif] cursor-pointer ${message.trim() && password.trim()
-                ? "bg-black text-white hover:bg-[#333]"
-                : "bg-[#eee] text-[#bbb] cursor-not-allowed"
-                }`}
-              style={{ fontVariationSettings: "'wdth' 100" }}
-            >
-              <Send size={14} />
-              의견 보내기
-            </button>
-            {submitted && (
-              <motion.div
-                className="flex items-center gap-[6px] text-[#4CAF50] text-[13px] font-['Noto_Sans_KR:Regular',sans-serif]"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0 }}
+          {/* Notice & Submit Button */}
+          <div className="flex flex-col gap-[20px]">
+            <p className="font-['Noto_Sans_KR:Regular',sans-serif] text-[11px] md:text-[12px] text-[#999] tracking-[-0.3px] leading-[1.6] break-keep">
+              작성해주신 문의와 답변은 작성일 기준 3개월 동안 보관되며, 이후에는 원활한 운영과 개인정보 보호를 위해 자동으로 삭제됩니다.
+            </p>
+            <div className="flex items-center gap-[16px]">
+              <button
+                type="submit"
+                disabled={!message.trim() || !password.trim()}
+                className={`flex items-center gap-[8px] px-[24px] py-[11px] rounded-full text-[13px] tracking-[-0.3px] transition-all font-['Noto_Sans_KR:Regular',sans-serif] cursor-pointer ${message.trim() && password.trim()
+                  ? "bg-black text-white hover:bg-[#333]"
+                  : "bg-[#eee] text-[#bbb] cursor-not-allowed"
+                  }`}
+                style={{ fontVariationSettings: "'wdth' 100" }}
               >
-                <CheckCircle size={16} />
-                <span>의견이 등록되었습니다!</span>
-              </motion.div>
-            )}
+                <Send size={14} />
+                의견 보내기
+              </button>
+              {submitted && (
+                <motion.div
+                  className="flex items-center gap-[6px] text-[#4CAF50] text-[13px] font-['Noto_Sans_KR:Regular',sans-serif]"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <CheckCircle size={16} />
+                  <span>의견이 등록되었습니다!</span>
+                </motion.div>
+              )}
+            </div>
           </div>
         </motion.form>
 

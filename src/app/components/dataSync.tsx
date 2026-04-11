@@ -92,6 +92,7 @@ const ALL_KEYS = [
   "admin_brand_images",
   "admin_popups",
   "admin_partners",
+  "admin_activity",
 ];
 
 let _initPromise: Promise<void> | null = null;

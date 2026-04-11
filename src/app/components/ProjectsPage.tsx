@@ -191,10 +191,10 @@ export default function ProjectsPage() {
               transition={{ duration: 0.6 }}
             >
               <p className="col-start-1 row-start-1 group-hover:opacity-0 transition-opacity duration-300 m-0">
-                Our Ministry
+                Activity History
               </p>
               <p className="col-start-1 row-start-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 font-['Noto_Sans_KR:Medium',sans-serif] tracking-[-1.4px] md:tracking-[-1.8px] lg:tracking-[-2.2px] m-0">
-                사역 소개
+                활동 연혁
               </p>
             </motion.div>
           </div>
@@ -206,7 +206,7 @@ export default function ProjectsPage() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          동북시찰청년연합회가 함께 해온 활동들을 소개합니다
+          동북시찰청년연합회가 함께 해온 활동의 기록입니다
         </motion.p>
       </div>
 
@@ -254,7 +254,7 @@ export default function ProjectsPage() {
             <button
               onClick={() => setShowPasswordModal(true)}
               className="text-[#ccc] hover:text-[#999] active:text-[#999] transition-colors duration-300 p-[4px] cursor-pointer bg-transparent border-none"
-              aria-label="Our Ministry 관리"
+              aria-label="활동 연혁 관리"
             >
               <Settings size={13} />
             </button>
